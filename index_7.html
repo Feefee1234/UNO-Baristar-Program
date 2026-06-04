@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>UNO! Barista Stars</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#d42b2b;--red-dark:#a01e1e;--red-light:#f05555;
+  --bg:#f4f4f2;--bg2:#ebebea;--bg3:#e0e0de;
+  --surface:#ffffff;--surface2:#f8f8f7;
+  --black:#111111;--black2:#1a1a1a;
+  --text:#1a1a1a;--text2:#555550;--text3:#888884;
+  --border:#d8d8d4;--border2:#c8c8c4;
+  --silver:#a8b4c0;--silver-light:#d8e4f0;--silver-dark:#7090a8;
+  --gold:#c8a040;--green:#2a9450;
+  --radius:6px;--radius-lg:10px;--radius-xl:14px;
+
+  /* Tier */
+  --tier-red:#d42b2b;
+  --tier-silver:#a8b4c0;
+  --tier-black:#1a1a1a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;}
+
+/* ─── UNO CUP SVG ─── */
+/* Inline SVG cup used via <svg> blocks — no img needed */
+
+/* ─── TOPBAR ─── */
+.topbar{position:sticky;top:0;z-index:100;background:var(--red);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(212,43,43,0.25);}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-text{font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;letter-spacing:0.02em;line-height:1;}
+.logo-badge{background:rgba(0,0,0,0.3);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 6px;border-radius:2px;line-height:1.3;text-align:center;}
+.icon-btn{width:36px;height:36px;background:rgba(0,0,0,0.2);border:none;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--surface);border-top:1.5px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;transition:color 0.15s;}
+.nav-item svg{width:20px;height:20px;stroke-width:1.8;}
+.nav-item.active{color:var(--red);}
+
+/* ─── PAGES ─── */
+.page{display:none;padding:0 0 90px;animation:fadeUp 0.2s ease;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ─── HERO BANNER ─── */
+.hero-banner{background:var(--surface);border-bottom:1px solid var(--border);padding:24px 16px 20px;position:relative;overflow:hidden;}
+.hero-banner::after{content:'UNO!';position:absolute;font-family:'Bebas Neue',sans-serif;font-size:130px;color:rgba(212,43,43,0.04);right:-8px;top:-15px;line-height:1;pointer-events:none;user-select:none;}
+
+/* Profile row: name/branch left, pts right */
+.hero-meta-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;}
+.hero-name{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:0.02em;margin-bottom:3px;}
+.hero-branch{font-size:13px;color:var(--text2);font-weight:500;}
+.hero-pts-mini{text-align:right;}
+.pts-num-mini{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--text);line-height:1;}
+.pts-label-mini{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;}
+
+/* ═══ PREMIUM BADGE HERO ═══ */
+.badge-hero{display:flex;flex-direction:column;align-items:center;margin:0 auto 22px;position:relative;}
+.badge-outer-ring{position:relative;display:flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;}
+
+/* NO TIER */
+.badge-outer-ring.t0{width:96px;height:96px;background:var(--bg3);border:2px solid var(--border2);}
+
+/* RED TIER */
+.badge-outer-ring.t-red{
+  width:108px;height:108px;
+  background:radial-gradient(circle at 35% 30%, #ff6b4a 0%, #e83030 35%, #b01818 70%, #7a0808 100%);
+  box-shadow:0 0 0 3px rgba(212,43,43,0.15), 0 8px 24px rgba(212,43,43,0.35), 0 2px 8px rgba(0,0,0,0.15);
+  border:2px solid rgba(255,120,80,0.5);
+}
+.badge-outer-ring.t-red::before{
+  content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+  transform:skewX(-20deg);
+  animation:redShine 4s 2s ease-in-out infinite;
+}
+@keyframes redShine{0%,100%{left:-80%;opacity:0;}10%{opacity:1;}50%{left:150%;opacity:0;}}
+
+/* SILVER TIER */
+.badge-outer-ring.t-silver{
+  width:108px;height:108px;
+  background:linear-gradient(145deg,#e8f0f8 0%,#b8ccd8 20%,#f4f8fc 40%,#8aaabb 55%,#d8e8f4 70%,#c0d0dc 85%,#eef4f8 100%);
+  box-shadow:0 0 0 3px rgba(160,190,210,0.2), 0 8px 24px rgba(120,160,190,0.3), 0 2px 8px rgba(0,0,0,0.1);
+  border:2px solid rgba(220,235,248,0.9);
+}
+.badge-outer-ring.t-silver::before{
+  content:'';position:absolute;top:0;left:-80%;width:55%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent);
+  transform:skewX(-20deg);
+  animation:silverChrome 3s 1s ease-in-out infinite;
+}
+@keyframes silverChrome{0%,100%{left:-80%;opacity:0;}8%{opacity:1;}55%{left:150%;opacity:0;}}
+
+/* BLACK TIER */
+.badge-outer-ring.t-black{
+  width:108px;height:108px;
+  background:radial-gradient(circle at 40% 35%, #3a3a3a 0%, #1e1e1e 45%, #111 100%);
+  box-shadow:0 0 0 3px rgba(255,255,255,0.06), 0 8px 28px rgba(0,0,0,0.5), 0 0 20px rgba(180,160,120,0.12);
+  border:2px solid rgba(180,160,120,0.25);
+  animation:blackPulse 4s ease-in-out infinite;
+}
+@keyframes blackPulse{0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,0.06),0 8px 28px rgba(0,0,0,0.5),0 0 20px rgba(180,160,120,0.12);}50%{box-shadow:0 0 0 3px rgba(255,255,255,0.06),0 8px 28px rgba(0,0,0,0.5),0 0 28px rgba(180,160,120,0.22);}}
+
+/* Cup icon inside badge */
+.badge-cup-svg{position:relative;z-index:1;}
+
+/* Badge info below ring */
+.badge-current-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-top:10px;margin-bottom:2px;}
+.badge-tier-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.06em;line-height:1;}
+.badge-tier-name.t0{color:var(--text3);}
+.badge-tier-name.t-red{color:var(--red);}
+.badge-tier-name.t-silver{
+  background:linear-gradient(135deg,#8090a0,#c8d8e4,#6080a0,#d0e0ec,#9aabb8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.badge-tier-name.t-black{
+  background:linear-gradient(135deg,#555,#aaa,#333,#999);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.badge-tier-desc{font-size:11px;color:var(--text3);margin-top:3px;font-family:'Barlow',sans-serif;letter-spacing:0.01em;}
+.badge-earned-date{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:0.06em;margin-top:5px;opacity:0.7;}
+
+/* PROGRESS BAR */
+.bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-weight:500;margin-bottom:5px;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em;}
+.bar-bg{height:7px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;transition:width 1s ease;}
+.bar-fill.t-red{background:linear-gradient(90deg,#b01818,#e83030,#ff6b4a);}
+.bar-fill.t-silver{background:linear-gradient(90deg,#8090a0,#c0d4e4,#9ab0c0);}
+.bar-fill.t-black,.bar-fill.full{background:linear-gradient(90deg,#1a1a1a,#444,#1a1a1a);}
+.bar-done{font-size:11px;color:var(--green);margin-top:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
+
+/* ─── SECTIONS ─── */
+.section{padding:0 16px;margin-top:20px;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--text3);letter-spacing:0.14em;text-transform:uppercase;}
+.sec-line{flex:1;height:1px;background:var(--border);margin-left:10px;}
+
+/* ─── TIER GRID ─── */
+.tier-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.tier-card{border-radius:var(--radius-lg);padding:16px 10px 12px;text-align:center;border:1.5px solid var(--border);position:relative;}
+
+/* RED tier card */
+.tier-card.t-red{background:#fff5f5;border-color:#f0b0b0;}
+.tier-card.t-red.active-tier{border-color:var(--red);border-width:2px;}
+
+/* SILVER tier card — metallic shimmer */
+.tier-card.t-silver{background:linear-gradient(160deg,#f0f4f8 0%,#e4eef6 40%,#f8fafb 60%,#dde8f0 100%);border-color:#b8c8d8;position:relative;overflow:hidden;}
+.tier-card.t-silver::before{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent);transform:skewX(-15deg);animation:shimmer 3s 1s infinite;}
+.tier-card.t-silver.active-tier{border-color:var(--silver-dark);border-width:2px;}
+@keyframes shimmer{0%{left:-60%;}100%{left:130%;}}
+
+/* BLACK tier card */
+.tier-card.t-black{background:linear-gradient(160deg,#2a2a2a,#1a1a1a);border-color:#404040;}
+.tier-card.t-black .tier-range{color:#888;}
+.tier-card.t-black .tier-status.locked{color:#666;}
+.tier-card.t-black.active-tier{border-color:#888;border-width:2px;}
+
+/* Tier cup icon inside card */
+.tier-cup-wrap{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;}
+.tier-cup-wrap.t-red{background:#fce0e0;}
+.tier-cup-wrap.t-silver{background:linear-gradient(135deg,#dce8f0,#f0f6fa,#c8d8e4);}
+.tier-cup-wrap.t-black{background:#2e2e2e;border:1px solid #444;}
+
+.tier-name-lbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;margin-bottom:3px;}
+.tier-name-lbl.t-red{color:var(--red);}
+.tier-name-lbl.t-silver{color:#6080a0;}
+.tier-name-lbl.t-black{color:#c8c8c8;}
+.tier-range{font-size:10px;color:var(--text3);font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.05em;}
+.tier-status{font-size:9px;margin-top:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+.tier-status.done{color:var(--green);}
+.tier-status.locked{color:var(--text3);}
+.tier-status.current{color:var(--red);}
+
+/* ─── POINT COLLECTION ─── */
+.earn-category{margin-bottom:18px;}
+.earn-cat-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.earn-cat-label{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--red);}
+.earn-cat-bar{flex:1;height:1px;background:var(--border);}
+.earn-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.earn-item-main{flex:1;}
+.earn-item-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:0.02em;}
+.earn-item-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.earn-item-pts{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);letter-spacing:0.04em;flex-shrink:0;}
+.earn-item.bonus{border-left-color:var(--gold);background:var(--surface2);}
+.earn-item.bonus .earn-item-pts{color:var(--gold);}
+.earn-item.bonus .earn-item-name{color:var(--text2);}
+
+/* ─── PHILOSOPHY ─── */
+.philosophy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.phil-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;text-align:center;}
+.phil-icon{font-size:20px;margin-bottom:6px;}
+.phil-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--red);margin-bottom:3px;}
+.phil-desc{font-size:11px;color:var(--text2);line-height:1.5;}
+
+/* ─── FEED ─── */
+.compose-box{margin:16px 16px 0;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:var(--radius-lg);padding:14px;}
+.compose-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.compose-av{width:34px;height:34px;border-radius:var(--radius);background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;flex-shrink:0;}
+.compose-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;resize:none;outline:none;}
+.compose-input::placeholder{color:var(--text3);}
+.compose-input:focus{border-color:var(--red);}
+.compose-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.type-pills{display:flex;gap:5px;flex-wrap:wrap;}
+.type-pill{font-size:10px;padding:4px 9px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;transition:all 0.12s;}
+.type-pill.selected{border-color:var(--red);color:#fff;background:var(--red);}
+.post-btn{background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:7px 18px;border-radius:99px;border:none;cursor:pointer;}
+.feed-list{display:flex;flex-direction:column;gap:10px;margin:14px 16px 0;}
+.feed-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.feed-card-top{display:flex;align-items:center;gap:10px;padding:12px 14px 8px;}
+.feed-av{width:34px;height:34px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;flex-shrink:0;}
+.feed-meta{flex:1;}
+.feed-author{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text);letter-spacing:0.02em;}
+.feed-date{font-size:11px;color:var(--text3);}
+.feed-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;padding:3px 8px;border-radius:99px;font-family:'Barlow Condensed',sans-serif;}
+.tag-comp{background:#e8f5e8;color:#1a6a2a;border:1px solid #c0e0c0;}
+.tag-bom{background:#fdf0d8;color:#8a6010;border:1px solid #e8d090;}
+.tag-news{background:#fde8e8;color:var(--red-dark);}
+.tag-know{background:#e8eef8;color:#1a4080;border:1px solid #b8c8e8;}
+.feed-body{padding:0 14px 10px;}
+.feed-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px;letter-spacing:0.01em;}
+.feed-text{font-size:13px;color:var(--text2);line-height:1.55;}
+.feed-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+.feed-action{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.04em;}
+.feed-action svg{width:14px;height:14px;}
+.feed-action.liked{color:var(--red);}
+.empty-state{text-align:center;padding:32px 16px;color:var(--text3);}
+.empty-state-icon{font-size:28px;margin-bottom:8px;}
+.empty-state-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+
+/* ─── BARISTAS OF THE MONTH ─── */
+.bom-page-header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 16px 14px;}
+.bom-page-title{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:0.04em;margin-bottom:4px;}
+.bom-page-sub{font-size:13px;color:var(--text2);}
+.bom-section-wrap{padding:16px 16px 0;}
+.bom-section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;}
+.bom-section-label.comp{color:var(--green);}
+.bom-section-label.learn{color:var(--gold);}
+.bom-section-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.03em;color:var(--text);margin-bottom:6px;}
+.bom-section-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:14px;}
+
+.bom-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;margin:0 16px 14px;}
+.bom-portrait{width:100%;height:180px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.bom-portrait.comp{background:linear-gradient(160deg,#1a2a1a,#0a1a0a);}
+.bom-portrait.learn{background:linear-gradient(160deg,#2a1e0a,#1a1206);}
+.bom-portrait-badge{position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fff;}
+.bom-portrait-badge.comp{background:rgba(30,80,30,0.85);border-color:rgba(80,200,80,0.3);color:#8de88d;}
+.bom-portrait-badge.learn{background:rgba(80,50,10,0.85);border-color:rgba(200,160,40,0.3);color:#f0c050;}
+.bom-card-body{padding:16px;}
+.bom-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.bom-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.03em;color:var(--text);}
+.bom-store{font-size:12px;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.05em;margin-top:2px;}
+.bom-month-pill{font-size:10px;padding:4px 10px;border-radius:99px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;}
+.bom-month-pill.comp{background:#e8f5e8;color:#1a6a2a;border:1px solid #c0e0c0;}
+.bom-month-pill.learn{background:#fdf0d8;color:#8a6010;border:1px solid #e8d090;}
+.bom-achievement{background:var(--bg2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;}
+.bom-achievement-label{font-size:10px;color:var(--text3);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;}
+.bom-achievement-val{font-size:13px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-weight:700;}
+.bom-message{font-size:13px;color:var(--text2);font-style:italic;line-height:1.6;border-left:2px solid var(--border2);padding-left:10px;}
+.bom-message.comp{border-left-color:var(--green);}
+.bom-message.learn{border-left-color:var(--gold);}
+.bom-divider{height:1px;background:var(--border);margin:8px 16px 0;}
+
+/* ─── ADMIN ─── */
+.admin-header{background:var(--red);padding:12px 16px;display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fff;}
+.admin-list{display:flex;flex-direction:column;gap:8px;margin:14px 16px 0;}
+.admin-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.admin-av{width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;flex-shrink:0;}
+.admin-info{flex:1;}
+.admin-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:0.02em;}
+.admin-meta{font-size:11px;color:var(--text3);}
+.pts-ctrl{display:flex;align-items:center;gap:6px;}
+.adj-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.adj-btn:active{background:var(--red);border-color:var(--red);color:#fff;}
+.pts-val{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);min-width:34px;text-align:center;}
+.save-btn{background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 12px;border-radius:99px;border:none;cursor:pointer;}
+.sheet-panel{margin:14px 16px 0;background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:var(--radius-lg);padding:16px;}
+.sheet-panel-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.sheet-panel p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px;}
+.sheet-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:12px;font-family:monospace;outline:none;margin-bottom:10px;}
+.sheet-input:focus{border-color:var(--gold);}
+.connect-btn{width:100%;background:var(--text);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:11px;border-radius:var(--radius);border:none;cursor:pointer;}
+.search-box{position:relative;}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3);pointer-events:none;}
+.search-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 10px 34px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;outline:none;}
+.search-input::placeholder{color:var(--text3);}
+.search-input:focus{border-color:var(--red);}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:9px 20px;border-radius:99px;opacity:0;transition:all 0.25s;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- SVG defs for gradients (hidden) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d0dce8"/>
+      <stop offset="30%" stop-color="#f0f6fc"/>
+      <stop offset="55%" stop-color="#9ab0c0"/>
+      <stop offset="75%" stop-color="#e8f2f8"/>
+      <stop offset="100%" stop-color="#b0c4d4"/>
+    </linearGradient>
+    <linearGradient id="silverGradCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c8d8e4"/>
+      <stop offset="40%" stop-color="#eef4f8"/>
+      <stop offset="60%" stop-color="#a8bec8"/>
+      <stop offset="100%" stop-color="#dce8f0"/>
+    </linearGradient>
+    <linearGradient id="blackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2e2e2e"/>
+      <stop offset="50%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#222"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="topbar">
+  <div class="logo-wrap">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;line-height:1;letter-spacing:0.02em;">UNO!</div>
+    <div class="logo-badge">COFFEE<br>COMPANY</div>
+  </div>
+  <button class="icon-btn" onclick="showToast('NO NEW NOTIFICATIONS')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  </button>
+</div>
+
+<!-- ══════════ MY POINTS ══════════ -->
+<div id="page-home" class="page active">
+  <div class="hero-banner">
+    <!-- Name + pts row -->
+    <div class="hero-meta-row">
+      <div>
+        <div class="hero-name" id="hero-name">FEEFEE</div>
+        <div class="hero-branch" id="hero-branch">Branch HQ · Barista</div>
+      </div>
+      <div class="hero-pts-mini">
+        <div class="pts-num-mini" id="hero-pts">214</div>
+        <div class="pts-label-mini">Points</div>
+      </div>
+    </div>
+    <!-- PREMIUM BADGE HERO -->
+    <div class="badge-hero">
+      <div class="badge-outer-ring t0" id="hero-badge"></div>
+      <div class="badge-current-label">CURRENT TIER</div>
+      <div class="badge-tier-name t0" id="hero-badge-tier-name">NO TIER</div>
+      <div class="badge-tier-desc" id="hero-badge-tier-desc">Start earning points to unlock your first tier</div>
+      <div class="badge-earned-date" id="hero-badge-date"></div>
+    </div>
+    <div class="bar-labels"><span id="bar-left">Earn your first point</span><span id="bar-right"></span></div>
+    <div class="bar-bg"><div class="bar-fill t-red" id="bar-fill" style="width:0%"></div></div>
+    <div class="bar-done" id="bar-done" style="display:none;">✓ BLACK TIER ACHIEVED</div>
+  </div>
+
+  <!-- TIER SYSTEM -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-title">TIER SYSTEM</span>
+      <div class="sec-line"></div>
+    </div>
+    <div class="tier-grid">
+      <!-- RED -->
+      <div class="tier-card t-red" id="tc-red">
+        <div class="tier-cup-wrap t-red">
+          <svg width="24" height="24" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#d42b2b" d="M8 18 Q8 10 16 10 L52 10 Q60 10 60 18 L56 58 Q56 64 50 64 L18 64 Q12 64 12 58 Z"/>
+            <path fill="#d42b2b" d="M60 22 Q74 22 74 36 Q74 50 60 48 L58 48 L58 36 L60 36 Q68 36 68 30 Q68 24 60 24 Z"/>
+            <ellipse cx="26" cy="28" rx="4" ry="8" fill="rgba(255,255,255,0.2)" transform="rotate(-15 26 28)"/>
+          </svg>
+        </div>
+        <div class="tier-name-lbl t-red">RED</div>
+        <div class="tier-range">10–99 PTS</div>
+        <div class="tier-status locked" id="ts-red">LOCKED</div>
+      </div>
+      <!-- SILVER -->
+      <div class="tier-card t-silver" id="tc-silver">
+        <div class="tier-cup-wrap t-silver">
+          <svg width="24" height="24" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="url(#silverGradCard)" d="M8 18 Q8 10 16 10 L52 10 Q60 10 60 18 L56 58 Q56 64 50 64 L18 64 Q12 64 12 58 Z"/>
+            <path fill="url(#silverGradCard)" d="M60 22 Q74 22 74 36 Q74 50 60 48 L58 48 L58 36 L60 36 Q68 36 68 30 Q68 24 60 24 Z"/>
+            <ellipse cx="26" cy="26" rx="5" ry="10" fill="rgba(255,255,255,0.45)" transform="rotate(-15 26 26)"/>
+          </svg>
+        </div>
+        <div class="tier-name-lbl t-silver">SILVER</div>
+        <div class="tier-range">100–199 PTS</div>
+        <div class="tier-status locked" id="ts-silver">LOCKED</div>
+      </div>
+      <!-- BLACK -->
+      <div class="tier-card t-black" id="tc-black">
+        <div class="tier-cup-wrap t-black">
+          <svg width="24" height="24" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="url(#blackGrad)" d="M8 18 Q8 10 16 10 L52 10 Q60 10 60 18 L56 58 Q56 64 50 64 L18 64 Q12 64 12 58 Z"/>
+            <path fill="url(#blackGrad)" d="M60 22 Q74 22 74 36 Q74 50 60 48 L58 48 L58 36 L60 36 Q68 36 68 30 Q68 24 60 24 Z"/>
+            <ellipse cx="26" cy="28" rx="4" ry="8" fill="rgba(255,255,255,0.08)" transform="rotate(-15 26 28)"/>
+          </svg>
+        </div>
+        <div class="tier-name-lbl t-black">BLACK</div>
+        <div class="tier-range">200+ PTS</div>
+        <div class="tier-status locked" id="ts-black">LOCKED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POINT COLLECTION -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-title">POINT COLLECTION</span>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="earn-category">
+      <div class="earn-cat-head"><span style="font-size:15px;">📚</span><span class="earn-cat-label">LEARN</span><div class="earn-cat-bar"></div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Attend Internal Special Training</div></div><div class="earn-item-pts">+10</div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Join External Coffee Workshop</div></div><div class="earn-item-pts">+10</div></div>
+    </div>
+
+    <div class="earn-category">
+      <div class="earn-cat-head"><span style="font-size:15px;">☕</span><span class="earn-cat-label">ENGAGE</span><div class="earn-cat-bar"></div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Attend Any Coffee Event or Expo</div></div><div class="earn-item-pts">+10</div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Post Coffee Content About UNO</div><div class="earn-item-sub">On your personal social media account</div></div><div class="earn-item-pts">+10</div></div>
+    </div>
+
+    <div class="earn-category">
+      <div class="earn-cat-head"><span style="font-size:15px;">🏅</span><span class="earn-cat-label">COMPETE</span><div class="earn-cat-bar"></div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Join Internal Competition</div></div><div class="earn-item-pts">+20</div></div>
+      <div class="earn-item bonus"><div class="earn-item-main"><div class="earn-item-name">Top 10 Finalist</div><div class="earn-item-sub">Internal competition bonus</div></div><div class="earn-item-pts">+5</div></div>
+      <div class="earn-item bonus"><div class="earn-item-main"><div class="earn-item-name">Winner</div><div class="earn-item-sub">Internal competition bonus</div></div><div class="earn-item-pts">+15</div></div>
+    </div>
+
+    <div class="earn-category">
+      <div class="earn-cat-head"><span style="font-size:15px;">🌏</span><span class="earn-cat-label">REPRESENT</span><div class="earn-cat-bar"></div></div>
+      <div class="earn-item"><div class="earn-item-main"><div class="earn-item-name">Join External Competition</div></div><div class="earn-item-pts">+20</div></div>
+      <div class="earn-item bonus"><div class="earn-item-main"><div class="earn-item-name">Represent UNO!</div><div class="earn-item-sub">External competition bonus</div></div><div class="earn-item-pts">+15</div></div>
+      <div class="earn-item bonus"><div class="earn-item-main"><div class="earn-item-name">Top 10 Finalist</div><div class="earn-item-sub">External competition bonus</div></div><div class="earn-item-pts">+5</div></div>
+      <div class="earn-item bonus"><div class="earn-item-main"><div class="earn-item-name">Winner</div><div class="earn-item-sub">External competition bonus</div></div><div class="earn-item-pts">+15</div></div>
+    </div>
+  </div>
+
+  <!-- MISSION -->
+  <div class="section" style="margin-bottom:8px;">
+    <div class="sec-head"><span class="sec-title">OUR MISSION</span><div class="sec-line"></div></div>
+    <div class="philosophy-grid">
+      <div class="phil-card"><div class="phil-icon">🤝</div><div class="phil-name">COMMUNITY</div><div class="phil-desc">Build belonging through shared coffee experiences</div></div>
+      <div class="phil-card"><div class="phil-icon">✨</div><div class="phil-name">PARTICIPATION</div><div class="phil-desc">Encourage every barista to engage in coffee culture</div></div>
+      <div class="phil-card"><div class="phil-icon">🌟</div><div class="phil-name">RECOGNITION</div><div class="phil-desc">Make coffee achievements visible and celebrated</div></div>
+      <div class="phil-card"><div class="phil-icon">🔓</div><div class="phil-name">ACCESS</div><div class="phil-desc">Unlock exclusive opportunities for highly engaged baristas</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ FEED ══════════ -->
+<div id="page-feed" class="page">
+  <div class="compose-box">
+    <div class="compose-row">
+      <div class="compose-av" id="compose-av">FF</div>
+      <textarea class="compose-input" id="compose-text" rows="2" placeholder="Share a coffee tip, news, or knowledge…"></textarea>
+    </div>
+    <div class="compose-footer">
+      <div class="type-pills">
+        <button class="type-pill selected" onclick="selectType(this,'knowledge')">Knowledge</button>
+        <button class="type-pill" onclick="selectType(this,'competition')">Competition</button>
+        <button class="type-pill" onclick="selectType(this,'news')">News</button>
+        <button class="type-pill" onclick="selectType(this,'bom')">Barista of Month</button>
+      </div>
+      <button class="post-btn" onclick="submitPost()">POST</button>
+    </div>
+  </div>
+  <div id="feed-list" class="feed-list"></div>
+</div>
+
+<!-- ══════════ BARISTAS OF THE MONTH ══════════ -->
+<div id="page-bom" class="page">
+  <div class="bom-page-header">
+    <div class="bom-page-title">BARISTAS OF THE MONTH</div>
+    <div class="bom-page-sub">Celebrating coffee excellence across the UNO! family</div>
+  </div>
+
+  <!-- COMPETITOR -->
+  <div class="bom-section-wrap">
+    <div class="bom-section-label comp">🏆 Competitor of the Month</div>
+    <div class="bom-section-title">Competition Excellence</div>
+    <div class="bom-section-desc">Recognizing baristas who actively participate in coffee competitions and achieve outstanding results.</div>
+  </div>
+
+  <div id="bom-comp-list"></div>
+
+  <div class="bom-divider"></div>
+
+  <!-- LEARNER -->
+  <div class="bom-section-wrap" style="margin-top:16px;">
+    <div class="bom-section-label learn">📚 Coffee Learner of the Month</div>
+    <div class="bom-section-title">Learning & Development</div>
+    <div class="bom-section-desc">Recognizing baristas who actively develop coffee knowledge and participate in learning activities.</div>
+  </div>
+
+  <div id="bom-learn-list"></div>
+</div>
+
+<!-- ══════════ ADMIN ══════════ -->
+<div id="page-admin" class="page" style="padding:0 0 90px;">
+  <div class="admin-header">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    ADMIN — Update Points &amp; Content
+  </div>
+  <div class="sheet-panel">
+    <div class="sheet-panel-title">CONNECT GOOGLE SHEETS</div>
+    <p>Paste your published Google Sheet CSV URL. Points load live every time staff open the site — no file uploads needed.</p>
+    <input class="sheet-input" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+    <button class="connect-btn" onclick="connectSheet()">CONNECT & LOAD SHEET</button>
+  </div>
+  <div style="padding:14px 16px 0;">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="admin-search" placeholder="Search staff…" oninput="renderAdmin()">
+    </div>
+  </div>
+  <div id="admin-list" class="admin-list"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="showPage('home',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    My Points
+  </button>
+  <button class="nav-item" onclick="showPage('feed',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Feed
+  </button>
+  <button class="nav-item" onclick="showPage('bom',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+    Baristas
+  </button>
+  <button class="nav-item" onclick="showPage('admin',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Admin
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ME_ID = 1;
+let staff = [
+  {id:1,name:"Feefee",branch:"Branch HQ",points:214,initials:"FF"},
+  {id:2,name:"Somchai Prasert",branch:"Branch B",points:318,initials:"SP"},
+  {id:3,name:"Nisa Wongkham",branch:"Branch A",points:274,initials:"NW"},
+  {id:4,name:"Tanawan Chaiya",branch:"Branch C",points:158,initials:"TC"},
+  {id:5,name:"Pichaya Mak",branch:"Branch B",points:62,initials:"PM"},
+  {id:6,name:"Anucha Teerada",branch:"Branch C",points:145,initials:"AT"},
+  {id:7,name:"Monthon Saree",branch:"Branch A",points:87,initials:"MS"},
+  {id:8,name:"Siriya Phuket",branch:"Branch D",points:230,initials:"SP"},
+  {id:9,name:"Decha Kanchan",branch:"Branch B",points:190,initials:"DK"},
+  {id:10,name:"Wanna Thongsuk",branch:"Branch D",points:44,initials:"WT"},
+];
+
+let posts = [
+  {id:1,author:"Admin",initials:"AD",authorId:0,type:"bom",title:"Barista of the Month — May 2026: Somchai Prasert",body:"Congratulations to Somchai for his outstanding results at the ASEAN Barista Cup and collecting 318 points this month!",date:"1 Jun 2026",likes:12},
+  {id:2,author:"Admin",initials:"AD",authorId:0,type:"competition",title:"ASEAN Barista Cup 2026 — Entries Now Open",body:"Represent UNO! at the regional championship. Earn 20 pts for participating. Sign up at your branch board.",date:"2 Jun 2026",likes:8},
+  {id:3,author:"Nisa W.",initials:"NW",authorId:3,type:"knowledge",title:"Water temperature changes everything in extraction",body:"Brewing at 92°C vs 96°C makes a huge difference. Lighter roasts need higher heat; darker roasts can turn bitter fast.",date:"30 May 2026",likes:15},
+  {id:4,author:"Admin",initials:"AD",authorId:0,type:"news",title:"New Latte Art Internal Training — Earn 10 pts",body:"Head to your branch manager to register. Points awarded when you complete the session.",date:"28 May 2026",likes:6},
+];
+
+const bomCompetitors = [
+  {name:"Somchai Prasert",initials:"SP",store:"Branch B",month:"May 2026",achievement:"1st Place — ASEAN Barista Cup 2026",message:"Somchai represented UNO! with extraordinary skill and passion. His dedication to the craft inspires every barista in our network."},
+  {name:"Nisa Wongkham",initials:"NW",store:"Branch A",month:"April 2026",achievement:"Top 10 Finalist — Thailand Latte Art Championship",message:"Nisa's latte art consistently pushes creative boundaries. Her commitment to visual excellence reflects the UNO! spirit."},
+];
+
+const bomLearners = [
+  {name:"Feefee",initials:"FF",store:"Branch HQ",month:"May 2026",achievement:"Completed 3 external workshops + 2 internal modules",message:"Feefee's hunger for knowledge is contagious. She has shared insights from every workshop with her entire branch team."},
+  {name:"Anucha Teerada",initials:"AT",store:"Branch C",month:"April 2026",achievement:"Attended Bangkok Coffee Festival + 2 training sessions",message:"Anucha brings every learning experience back to the floor. Her growth in extraction technique this quarter has been remarkable."},
+];
+
+let selectedType = 'knowledge', postIdCounter = 5, likedPosts = new Set(), pendingPoints = {};
+
+const avColors = [
+  {bg:"#d42b2b",color:"#fff"},{bg:"#5a4000",color:"#e8b84b"},
+  {bg:"#1a3060",color:"#8eaacc"},{bg:"#5a3010",color:"#c8845a"},
+  {bg:"#1a5030",color:"#4caf6a"},{bg:"#4a1a5a",color:"#c08ae0"},
+  {bg:"#005050",color:"#4acfcf"},{bg:"#5a1010",color:"#ff8080"},
+];
+function avColor(id){return avColors[id % avColors.length];}
+
+function getTier(p){return p>=200?3:p>=100?2:p>=10?1:0;}
+function tierKey(t){return['t0','t-red','t-silver','t-black'][t];}
+function tierLabel(t){return['NO TIER','RED','SILVER','BLACK'][t];}
+
+const TIER_DESC = [
+  'Start earning points to unlock your first tier',
+  'Coffee passion ignited — keep pushing forward',
+  'Advanced skills, respected craft, earned recognition',
+  'Elite barista — the pinnacle of UNO! coffee mastery'
+];
+const TIER_DATES = ['','Jun 2025','Jan 2026','Mar 2026'];
+
+/* Cup SVG generator — sized to fill the badge ring */
+function makeCupSVG(tier, size){
+  const s = size;
+  if(tier === 0){
+    return `<svg width="${s}" height="${s}" viewBox="0 0 80 80" fill="none">
+      <path fill="#aaa" d="M10 20 Q10 12 18 12 L54 12 Q62 12 62 20 L58 60 Q58 66 52 66 L20 66 Q14 66 14 60 Z"/>
+      <path fill="#aaa" d="M62 24 Q76 24 76 38 Q76 50 62 50 L60 50 L60 38 L62 38 Q70 38 70 32 Q70 26 62 26 Z"/>
+    </svg>`;
+  }
+  if(tier === 1){
+    return `<svg width="${s}" height="${s}" viewBox="0 0 80 80" fill="none">
+      <defs>
+        <radialGradient id="rc" cx="38%" cy="30%" r="65%">
+          <stop offset="0%" stop-color="#ff8060"/>
+          <stop offset="45%" stop-color="#e83030"/>
+          <stop offset="100%" stop-color="#901010"/>
+        </radialGradient>
+      </defs>
+      <path fill="url(#rc)" d="M10 20 Q10 12 18 12 L54 12 Q62 12 62 20 L58 60 Q58 66 52 66 L20 66 Q14 66 14 60 Z"/>
+      <path fill="url(#rc)" d="M62 24 Q76 24 76 38 Q76 50 62 50 L60 50 L60 38 L62 38 Q70 38 70 32 Q70 26 62 26 Z"/>
+      <ellipse cx="26" cy="28" rx="5" ry="11" fill="rgba(255,255,255,0.28)" transform="rotate(-18 26 28)"/>
+      <ellipse cx="36" cy="20" rx="3" ry="5" fill="rgba(255,255,255,0.16)" transform="rotate(-10 36 20)"/>
+    </svg>`;
+  }
+  if(tier === 2){
+    return `<svg width="${s}" height="${s}" viewBox="0 0 80 80" fill="none">
+      <defs>
+        <linearGradient id="sc" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#c8d8e4"/>
+          <stop offset="22%" stop-color="#eef6fc"/>
+          <stop offset="48%" stop-color="#8aaabb"/>
+          <stop offset="68%" stop-color="#ddeef8"/>
+          <stop offset="100%" stop-color="#b0c8d8"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#sc)" d="M10 20 Q10 12 18 12 L54 12 Q62 12 62 20 L58 60 Q58 66 52 66 L20 66 Q14 66 14 60 Z"/>
+      <path fill="url(#sc)" d="M62 24 Q76 24 76 38 Q76 50 62 50 L60 50 L60 38 L62 38 Q70 38 70 32 Q70 26 62 26 Z"/>
+      <ellipse cx="25" cy="26" rx="5" ry="13" fill="rgba(255,255,255,0.65)" transform="rotate(-18 25 26)"/>
+      <ellipse cx="36" cy="18" rx="2.5" ry="5" fill="rgba(255,255,255,0.45)" transform="rotate(-10 36 18)"/>
+      <ellipse cx="50" cy="38" rx="2" ry="6" fill="rgba(255,255,255,0.2)" transform="rotate(-5 50 38)"/>
+    </svg>`;
+  }
+  // tier 3 — black
+  return `<svg width="${s}" height="${s}" viewBox="0 0 80 80" fill="none">
+    <defs>
+      <radialGradient id="bkc" cx="38%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="#484848"/>
+        <stop offset="55%" stop-color="#1c1c1c"/>
+        <stop offset="100%" stop-color="#0e0e0e"/>
+      </radialGradient>
+    </defs>
+    <path fill="url(#bkc)" d="M10 20 Q10 12 18 12 L54 12 Q62 12 62 20 L58 60 Q58 66 52 66 L20 66 Q14 66 14 60 Z"/>
+    <path fill="url(#bkc)" d="M62 24 Q76 24 76 38 Q76 50 62 50 L60 50 L60 38 L62 38 Q70 38 70 32 Q70 26 62 26 Z"/>
+    <ellipse cx="26" cy="27" rx="4" ry="10" fill="rgba(255,255,255,0.09)" transform="rotate(-18 26 27)"/>
+    <path d="M18 14 Q34 12 52 14" stroke="rgba(200,180,120,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderMyCard(){
+  const me = staff.find(s => s.id === ME_ID); if(!me) return;
+  const t = getTier(me.points), tk = tierKey(t);
+
+  document.getElementById('hero-name').textContent = me.name.toUpperCase();
+  document.getElementById('hero-branch').textContent = me.branch + ' · Barista';
+  document.getElementById('hero-pts').textContent = me.points;
+  document.getElementById('compose-av').textContent = me.initials;
+
+  /* Badge ring */
+  const b = document.getElementById('hero-badge');
+  b.className = 'badge-outer-ring ' + tk;
+  const cupSize = 52;
+  b.innerHTML = makeCupSVG(t, cupSize);
+
+  /* Badge text */
+  const tn = document.getElementById('hero-badge-tier-name');
+  tn.className = 'badge-tier-name ' + tk;
+  tn.textContent = tierLabel(t);
+  document.getElementById('hero-badge-tier-desc').textContent = TIER_DESC[t];
+  const dateEl = document.getElementById('hero-badge-date');
+  if(t > 0 && TIER_DATES[t]){
+    dateEl.textContent = 'Achieved: ' + TIER_DATES[t];
+  } else { dateEl.textContent = ''; }
+
+  /* Progress bar */
+  const bf = document.getElementById('bar-fill');
+  const bL = document.getElementById('bar-left');
+  const bR = document.getElementById('bar-right');
+  const bd = document.getElementById('bar-done');
+  bd.style.display = 'none';
+
+  if(t === 3){
+    bf.style.width = '100%'; bf.className = 'bar-fill full';
+    bL.textContent = 'Black Tier'; bR.textContent = me.points + ' pts';
+    bd.style.display = 'block';
+  } else if(t === 2){
+    bf.style.width = Math.min(100,Math.round(((me.points-100)/100)*100)) + '%';
+    bf.className = 'bar-fill t-silver';
+    bL.textContent = 'Silver → Black'; bR.textContent = (200-me.points) + ' pts to go';
+  } else if(t === 1){
+    bf.style.width = Math.min(100,Math.round(((me.points-10)/90)*100)) + '%';
+    bf.className = 'bar-fill t-red';
+    bL.textContent = 'Red → Silver'; bR.textContent = (100-me.points) + ' pts to go';
+  } else {
+    bf.style.width = '0%'; bf.className = 'bar-fill t-red';
+    bL.textContent = 'Earn 10 pts to reach Red Tier'; bR.textContent = '';
+  }
+
+  /* Tier cards */
+  const tiers = ['red','silver','black'];
+  tiers.forEach((name, i) => {
+    const tn2 = i+1;
+    const el = document.getElementById('ts-'+name);
+    const card = document.getElementById('tc-'+name);
+    if(t > tn2){el.textContent='✓ ACHIEVED'; el.className='tier-status done';}
+    else if(t === tn2){el.textContent='← YOU'; el.className='tier-status current';}
+    else{el.textContent='LOCKED'; el.className='tier-status locked';}
+    card.classList.toggle('active-tier', t === tn2);
+  });
+}
+
+function tagClass(type){return{knowledge:'tag-know',competition:'tag-comp',news:'tag-news',bom:'tag-bom'}[type]||'tag-news';}
+function tagLabel(type){return{knowledge:'KNOWLEDGE',competition:'COMPETITION',news:'NEWS',bom:'BARISTA OF MONTH'}[type]||type.toUpperCase();}
+
+function renderFeed(){
+  const list = document.getElementById('feed-list');
+  if(!posts.length){
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">☕</div><div class="empty-state-text">No posts yet — share something!</div></div>`;
+    return;
+  }
+  list.innerHTML = [...posts].reverse().map(p => {
+    const c = avColor(p.authorId), liked = likedPosts.has(p.id);
+    return `<div class="feed-card">
+      <div class="feed-card-top">
+        <div class="feed-av" style="background:${c.bg};color:${c.color}">${p.initials}</div>
+        <div class="feed-meta"><div class="feed-author">${p.author}</div><div class="feed-date">${p.date}</div></div>
+        <div class="feed-tag ${tagClass(p.type)}">${tagLabel(p.type)}</div>
+      </div>
+      <div class="feed-body">
+        <div class="feed-title">${p.title}</div>
+        ${p.body?`<div class="feed-text">${p.body}</div>`:''}
+      </div>
+      <div class="feed-footer">
+        <div class="feed-action${liked?' liked':''}" onclick="toggleLike(${p.id})">
+          <svg viewBox="0 0 24 24" fill="${liked?'var(--red)':'none'}" stroke="${liked?'var(--red)':'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          ${p.likes}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleLike(id){
+  const p = posts.find(p=>p.id===id); if(!p) return;
+  likedPosts.has(id)?(likedPosts.delete(id),p.likes--):(likedPosts.add(id),p.likes++);
+  renderFeed();
+}
+function selectType(btn,type){
+  document.querySelectorAll('.type-pill').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected'); selectedType=type;
+}
+function submitPost(){
+  const text=document.getElementById('compose-text').value.trim();
+  if(!text){showToast('WRITE SOMETHING FIRST');return;}
+  const me=staff.find(s=>s.id===ME_ID);
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  posts.push({id:postIdCounter++,author:me.name.split(' ')[0],initials:me.initials,authorId:me.id,type:selectedType,title:text,body:'',date:today,likes:0});
+  document.getElementById('compose-text').value='';
+  renderFeed(); showToast('+10 POINTS EARNED — POST PUBLISHED');
+  me.points+=10; renderMyCard(); renderAdmin();
+}
+
+/* Barista portrait SVGs — illustrated in specialty coffee style */
+function competitorPortrait(initials, idx){
+  const palettes=[
+    {bg1:'#1a2f1a',bg2:'#0a1a0a',skin:'#c8a070',shirt:'#1a3a2a',accent:'#4a9a5a'},
+    {bg1:'#1a1a2f',bg2:'#0a0a1a',skin:'#d4a888',shirt:'#2a2a4a',accent:'#6a6aca'},
+  ];
+  const p=palettes[idx%palettes.length];
+  return `<svg width="100%" height="180" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="340" height="180" fill="${p.bg1}"/>
+    <rect width="340" height="180" fill="url(#bgGrad${idx})"/>
+    <defs>
+      <radialGradient id="bgGrad${idx}" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="${p.accent}" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="${p.bg2}" stop-opacity="0.8"/>
+      </radialGradient>
+    </defs>
+    <!-- Table / competition surface -->
+    <rect x="60" y="120" width="220" height="60" rx="4" fill="rgba(0,0,0,0.4)"/>
+    <rect x="70" y="115" width="200" height="8" rx="2" fill="rgba(255,255,255,0.1)"/>
+    <!-- Portafilter -->
+    <rect x="90" y="100" width="60" height="20" rx="10" fill="#2a2a2a"/>
+    <rect x="145" y="106" width="20" height="8" rx="4" fill="#1a1a1a"/>
+    <rect x="110" y="118" width="20" height="4" rx="2" fill="#222"/>
+    <!-- Cup -->
+    <rect x="200" y="108" width="36" height="24" rx="6" fill="white" opacity="0.9"/>
+    <rect x="236" y="116" width="10" height="10" rx="5" fill="white" opacity="0.9"/>
+    <ellipse cx="218" cy="110" rx="14" ry="4" fill="#e8d8b0" opacity="0.8"/>
+    <!-- Person body -->
+    <rect x="130" y="60" width="80" height="65" rx="4" fill="${p.shirt}"/>
+    <!-- Collar / apron detail -->
+    <path d="M155 60 L170 75 L185 60" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <rect x="155" y="75" width="30" height="50" rx="2" fill="rgba(255,255,255,0.08)"/>
+    <!-- Head -->
+    <ellipse cx="170" cy="45" rx="22" ry="25" fill="${p.skin}"/>
+    <!-- Hair -->
+    <ellipse cx="170" cy="25" rx="22" ry="12" fill="#2a1a0a"/>
+    <rect x="148" y="20" width="44" height="12" rx="6" fill="#2a1a0a"/>
+    <!-- Eyes -->
+    <ellipse cx="162" cy="42" rx="3" ry="3.5" fill="#2a1a0a"/>
+    <ellipse cx="178" cy="42" rx="3" ry="3.5" fill="#2a1a0a"/>
+    <ellipse cx="163" cy="41" rx="1" ry="1" fill="white"/>
+    <ellipse cx="179" cy="41" rx="1" ry="1" fill="white"/>
+    <!-- Smile -->
+    <path d="M163 50 Q170 56 177 50" stroke="#1a0a00" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Arms -->
+    <rect x="95" y="68" width="40" height="14" rx="7" fill="${p.skin}" transform="rotate(20 115 75)"/>
+    <rect x="205" y="68" width="40" height="14" rx="7" fill="${p.skin}" transform="rotate(-15 225 75)"/>
+    <!-- UNO badge -->
+    <rect x="270" y="12" width="56" height="22" rx="4" fill="rgba(212,43,43,0.85)"/>
+    <text x="298" y="27" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="1">UNO!</text>
+    <!-- Initials watermark -->
+    <text x="170" y="165" font-family="sans-serif" font-size="11" fill="rgba(255,255,255,0.3)" text-anchor="middle" letter-spacing="2">${initials}</text>
+  </svg>`;
+}
+
+function learnerPortrait(initials, idx){
+  const palettes=[
+    {bg1:'#2a1e08',bg2:'#1a1006',skin:'#c09060',shirt:'#4a3018',accent:'#c8a040'},
+    {bg1:'#081828',bg2:'#040e18',skin:'#d4aa80',shirt:'#203040',accent:'#4080a8'},
+  ];
+  const p=palettes[idx%palettes.length];
+  return `<svg width="100%" height="180" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="340" height="180" fill="${p.bg1}"/>
+    <rect width="340" height="180" fill="url(#lbgGrad${idx})"/>
+    <defs>
+      <radialGradient id="lbgGrad${idx}" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="${p.accent}" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="${p.bg2}" stop-opacity="0.8"/>
+      </radialGradient>
+    </defs>
+    <!-- Workshop table -->
+    <rect x="40" y="118" width="260" height="62" rx="4" fill="rgba(0,0,0,0.35)"/>
+    <rect x="50" y="113" width="240" height="8" rx="2" fill="rgba(255,255,255,0.08)"/>
+    <!-- Cupping bowls -->
+    <ellipse cx="100" cy="118" rx="22" ry="8" fill="#c8a880" opacity="0.8"/>
+    <ellipse cx="100" cy="118" rx="18" ry="6" fill="#b89060" opacity="0.9"/>
+    <ellipse cx="155" cy="116" rx="18" ry="6" fill="#c8b090" opacity="0.8"/>
+    <ellipse cx="155" cy="116" rx="14" ry="4" fill="#b8a080" opacity="0.9"/>
+    <ellipse cx="205" cy="118" rx="16" ry="6" fill="#d8c0a0" opacity="0.8"/>
+    <!-- Notepad -->
+    <rect x="230" y="100" width="55" height="42" rx="3" fill="rgba(255,255,255,0.9)"/>
+    <rect x="235" y="108" width="40" height="2" rx="1" fill="rgba(0,0,0,0.2)"/>
+    <rect x="235" y="113" width="35" height="2" rx="1" fill="rgba(0,0,0,0.15)"/>
+    <rect x="235" y="118" width="38" height="2" rx="1" fill="rgba(0,0,0,0.15)"/>
+    <rect x="235" y="123" width="30" height="2" rx="1" fill="rgba(0,0,0,0.1)"/>
+    <rect x="230" y="100" width="5" height="42" rx="2" fill="rgba(212,43,43,0.7)"/>
+    <!-- Person body -->
+    <rect x="125" y="60" width="90" height="65" rx="4" fill="${p.shirt}"/>
+    <path d="M150 60 L170 80 L190 60" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+    <!-- Head -->
+    <ellipse cx="170" cy="44" rx="24" ry="26" fill="${p.skin}"/>
+    <!-- Hair -->
+    <ellipse cx="170" cy="22" rx="24" ry="13" fill="#3a2a10"/>
+    <rect x="146" y="19" width="48" height="14" rx="7" fill="#3a2a10"/>
+    <!-- Glasses -->
+    <rect x="155" y="40" rx="4" ry="4" width="14" height="10" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+    <rect x="173" y="40" rx="4" ry="4" width="14" height="10" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+    <line x1="169" y1="45" x2="173" y2="45" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+    <!-- Eyes behind glasses -->
+    <ellipse cx="162" cy="45" rx="2.5" ry="3" fill="#2a1a0a"/>
+    <ellipse cx="180" cy="45" rx="2.5" ry="3" fill="#2a1a0a"/>
+    <!-- Smile -->
+    <path d="M163 53 Q170 59 177 53" stroke="#1a0a00" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Arms -->
+    <rect x="88" y="75" width="42" height="13" rx="6.5" fill="${p.skin}" transform="rotate(15 109 81)"/>
+    <rect x="208" y="72" width="42" height="13" rx="6.5" fill="${p.skin}" transform="rotate(-20 229 78)"/>
+    <!-- UNO badge -->
+    <rect x="270" y="12" width="56" height="22" rx="4" fill="rgba(212,43,43,0.85)"/>
+    <text x="298" y="27" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="1">UNO!</text>
+    <!-- Coffee steam -->
+    <path d="M95 108 Q98 102 95 96" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M103 106 Q106 100 103 94" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <text x="170" y="170" font-family="sans-serif" font-size="11" fill="rgba(255,255,255,0.25)" text-anchor="middle" letter-spacing="2">${initials}</text>
+  </svg>`;
+}
+
+function renderBom(){
+  document.getElementById('bom-comp-list').innerHTML = bomCompetitors.map((b,i) => `
+    <div class="bom-card">
+      <div class="bom-portrait comp">${competitorPortrait(b.initials,i)}</div>
+      <div class="bom-portrait-badge comp">🏆 ${b.month}</div>
+      <div class="bom-card-body">
+        <div class="bom-card-top">
+          <div><div class="bom-name">${b.name.toUpperCase()}</div><div class="bom-store">${b.store}</div></div>
+          <div class="bom-month-pill comp">Competitor</div>
+        </div>
+        <div class="bom-achievement"><div class="bom-achievement-label">Achievement</div><div class="bom-achievement-val">${b.achievement}</div></div>
+        <div class="bom-message comp">${b.message}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('bom-learn-list').innerHTML = bomLearners.map((b,i) => `
+    <div class="bom-card">
+      <div class="bom-portrait learn">${learnerPortrait(b.initials,i)}</div>
+      <div class="bom-portrait-badge learn">📚 ${b.month}</div>
+      <div class="bom-card-body">
+        <div class="bom-card-top">
+          <div><div class="bom-name">${b.name.toUpperCase()}</div><div class="bom-store">${b.store}</div></div>
+          <div class="bom-month-pill learn">Learner</div>
+        </div>
+        <div class="bom-achievement"><div class="bom-achievement-label">Learning Achievements</div><div class="bom-achievement-val">${b.achievement}</div></div>
+        <div class="bom-message learn">${b.message}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAdmin(){
+  const q=(document.getElementById('admin-search')?.value||'').toLowerCase();
+  const filtered=staff.filter(s=>s.name.toLowerCase().includes(q)||s.branch.toLowerCase().includes(q));
+  if(!filtered.length){
+    document.getElementById('admin-list').innerHTML=`<div class="empty-state"><div class="empty-state-text">No staff match your search</div></div>`;
+    return;
+  }
+  document.getElementById('admin-list').innerHTML=filtered.map(s=>{
+    const t=getTier(s.points),c=avColor(s.id),cur=(s.id in pendingPoints)?pendingPoints[s.id]:s.points;
+    return`<div class="admin-row" id="arow-${s.id}">
+      <div class="admin-av" style="background:${c.bg};color:${c.color}">${s.initials}</div>
+      <div class="admin-info">
+        <div class="admin-name">${s.name.toUpperCase()}</div>
+        <div class="admin-meta">${s.branch} · ${tierLabel(t)} Tier</div>
+      </div>
+      <div class="pts-ctrl">
+        <button class="adj-btn" onclick="adjPoints(${s.id},-5)">−</button>
+        <div class="pts-val" id="pv-${s.id}">${cur}</div>
+        <button class="adj-btn" onclick="adjPoints(${s.id},+5)">+</button>
+        <button class="save-btn" onclick="savePoints(${s.id})">SAVE</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adjPoints(id,delta){
+  if(!(id in pendingPoints))pendingPoints[id]=staff.find(s=>s.id===id).points;
+  pendingPoints[id]=Math.max(0,pendingPoints[id]+delta);
+  const el=document.getElementById(`pv-${id}`);if(el)el.textContent=pendingPoints[id];
+}
+function savePoints(id){
+  if(!(id in pendingPoints))return;
+  const s=staff.find(s=>s.id===id);s.points=pendingPoints[id];delete pendingPoints[id];
+  renderAdmin();if(id===ME_ID)renderMyCard();
+  showToast(`${s.name.split(' ')[0].toUpperCase()} — ${s.points} PTS SAVED`);
+}
+
+function parseCSVRow(row){
+  const result=[];let cur='',inQuote=false;
+  for(let i=0;i<row.length;i++){const ch=row[i];if(ch==='"'){inQuote=!inQuote;}else if(ch===','&&!inQuote){result.push(cur.trim());cur='';}else{cur+=ch;}}
+  result.push(cur.trim());return result;
+}
+async function connectSheet(){
+  const url=document.getElementById('sheet-url').value.trim();
+  if(!url){showToast('PASTE YOUR SHEET URL FIRST');return;}
+  showToast('CONNECTING…');
+  try{
+    const res=await fetch(url);const csv=await res.text();
+    const rows=csv.trim().split('\n').slice(1);
+    const loaded=rows.map((row,i)=>{const cols=parseCSVRow(row);return{id:parseInt(cols[0])||(i+1),name:cols[1]||'Staff '+(i+1),branch:cols[2]||'Branch',points:parseInt(cols[3])||0,initials:cols[4]||(cols[1]?cols[1].split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'ST')};});
+    if(loaded.length>0){staff=loaded;renderMyCard();renderAdmin();showToast(`LOADED ${loaded.length} STAFF FROM SHEET`);}
+  }catch(e){showToast('CONNECTION FAILED — CHECK URL');}
+}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+renderMyCard(); renderFeed(); renderBom(); renderAdmin();
+</script>
+</body>
+</html>
