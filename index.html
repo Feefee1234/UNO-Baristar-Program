@@ -474,9 +474,34 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Sarabu
 // ═══════════════════════════════
 // DEMO DATA (used when no sheet connected)
 // ═══════════════════════════════
+// EMBEDDED_STAFF: pre-loaded from Google Sheet so the app works even from file://
+// The app will try to fetch a live update on each login and replace this data if successful.
 const DEMO_STAFF = [
-  {store:"TEST",storeCode:"1000",name:"Feefee",id:"123456",nickname:"Feefee",points:90,tier:"Red",initials:"FF"},
-  {store:"CLP",storeCode:"1001",name:"นางสาวกาญจนา เชาว์ไว",id:"200004",nickname:"Dao",points:30,tier:"Red",initials:"DA"},
+  {store:"TEST", storeCode:"1000", name:"Feefee",                        id:"123456", nickname:"Feefee",    points:100, tier:"Silver",  initials:"FE"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวกาญจนา เชาว์ไว",          id:"200004", nickname:"Dao",       points:30,  tier:"Red",     initials:"DA"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวธญาอนันต์ ตุเออะ",         id:"200008", nickname:"Mee",       points:0,   tier:"",        initials:"ME"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวยุวดี จินดา",               id:"200014", nickname:"May",       points:0,   tier:"",        initials:"MY"},
+  {store:"CLP",  storeCode:"1001", name:"นายเกรียงไกร สังข์ขำ",            id:"200021", nickname:"Barbie",    points:0,   tier:"",        initials:"BA"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวรุ่งรัตน์ ถนอมวงษ์",        id:"200024", nickname:"Por",       points:0,   tier:"",        initials:"PO"},
+  {store:"CLP",  storeCode:"1001", name:"นายกฤษฎา อาจยางคำ",              id:"200034", nickname:"Tae",       points:0,   tier:"",        initials:"TA"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวอัจฉรา บุมาพรหม",           id:"200037", nickname:"Khing",     points:0,   tier:"",        initials:"KH"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวเกวลิน ยอดสุวรรณ",          id:"200045", nickname:"Fang",      points:0,   tier:"",        initials:"FA"},
+  {store:"CLP",  storeCode:"1001", name:"นายกิตติ์เณศ อุดมมรัตน์",         id:"200063", nickname:"Ing",       points:0,   tier:"",        initials:"IN"},
+  {store:"CLP",  storeCode:"1001", name:"นายจิรนัย เอดติยัติ",             id:"200065", nickname:"Bluewave",  points:0,   tier:"",        initials:"BL"},
+  {store:"CLP",  storeCode:"1001", name:"นายภาราดร วิเศษหมื่น",            id:"200079", nickname:"Bas",       points:0,   tier:"",        initials:"BS"},
+  {store:"CLP",  storeCode:"1001", name:"นายธนากร วิลาจันทร์",             id:"200080", nickname:"Num",       points:0,   tier:"",        initials:"NU"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวจารุวรรณ สุขใส",            id:"200086", nickname:"Bai-yok",   points:0,   tier:"",        initials:"BY"},
+  {store:"CLP",  storeCode:"1001", name:"นายกรภัทร์ สมบูรณ์โชติมาพร",      id:"200087", nickname:"Pai",       points:0,   tier:"",        initials:"PA"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวอลีนา พานิชการ",            id:"200132", nickname:"Alina",     points:0,   tier:"",        initials:"AL"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวทิพกฤตา เทพทอง",           id:"300012", nickname:"Mint",      points:0,   tier:"",        initials:"MI"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวสุจิตรา ระวิวรรณ์",          id:"500007", nickname:"Namtarn",   points:0,   tier:"",        initials:"NA"},
+  {store:"CLP",  storeCode:"1001", name:"นางสาวศศิธร วงศ์วีนะชาติ",         id:"500011", nickname:"Mhee",      points:0,   tier:"",        initials:"MH"},
+  {store:"CLP",  storeCode:"1001", name:"ปฏิพล ธิราผล",                    id:"300008", nickname:"Ohm",       points:0,   tier:"",        initials:"OH"},
+  {store:"CLP",  storeCode:"1001", name:"รัตติกาล ทีรัญรัตน์",              id:"300009", nickname:"Noon",      points:0,   tier:"",        initials:"NO"},
+  {store:"CLP",  storeCode:"1001", name:"สมภพ แซ่เล้า",                    id:"500012", nickname:"Yeng",      points:0,   tier:"",        initials:"YE"},
+  {store:"MJR",  storeCode:"1002", name:"นางสาวสุดาพร พรมเมือง",           id:"200010", nickname:"Amm",       points:20,  tier:"Red",     initials:"AM"},
+  {store:"MJR",  storeCode:"1002", name:"นายศุภกร บุชา",                   id:"200015", nickname:"TonOak",    points:0,   tier:"",        initials:"TO"},
+  {store:"MJR",  storeCode:"1002", name:"นางสาวปิยธิดา มั่นทอง",           id:"200017", nickname:"Looktarn",  points:0,   tier:"",        initials:"LO"},
 ];
 
 const FEEFEE_PHOTO = null;
@@ -536,6 +561,8 @@ async function loadFromSheet(url, showFeedback = true) {
     const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()); // cache-bust
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
+    // Guard: if Google returned an HTML page instead of CSV (e.g. auth wall), treat as failure
+    if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV — check sheet sharing permissions');
     const rows = csv.trim().split('\n').slice(1); // skip header row
     const loaded = rows
       .filter(r => r.trim())
@@ -659,6 +686,11 @@ async function doLogin() {
   if (!user || user.storeCode !== storeCode) {
     document.getElementById('login-error').textContent = 'ไม่พบรหัสพนักงานหรือรหัสไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่';
     document.getElementById('login-input').select();
+    return;
+  }
+  if (user.resigned === 'TRUE' || user.resigned === true) {
+    document.getElementById('login-error').textContent = 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+    document.getElementById('login-id-input').select();
     return;
   }
   currentUser = user;
@@ -1063,4 +1095,3 @@ boot();
 </script>
 </body>
 </html>
-<!-- redeploy -->
