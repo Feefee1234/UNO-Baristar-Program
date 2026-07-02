@@ -493,10 +493,12 @@ const DEMO_STAFF = [
 // "Form Responses 1" tab = one row per submission: Timestamp | หมวดหมู่ | ชื่อพนักงาน/สาขา | รายละเอียดความสำเร็จ | รูปภาพ(Drive link)
 const BOM_SHEET_ID = '1ktta_VxwW2u8qK5CN5fVclOOLQOJNatOBvMnIGx56wA';
 const bomGvizURL = (tab) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
-// "Copy of Response" (gid=139081859) is a plain sheet — no Tables feature — so gviz exports it correctly.
-// "Form Responses 1" has Google's Tables feature which causes column C to export as blank.
+const bomExportURL = (gid) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/export?format=csv&gid=${gid}`;
+// Topic tab uses gviz (plain sheet, works fine).
+// Responses uses export endpoint + plain "Copy of Response" tab (gid=139081859) to avoid
+// both the Tables-feature column-blank bug and the gviz CORS block on that tab.
 const TOPIC_SHEET_URL = bomGvizURL('Topic');
-const BOM_RESPONSES_URL = bomGvizURL('Copy of Response');
+const BOM_RESPONSES_URL = bomExportURL('139081859');
 
 // Fallback used only if the BOM sheet can't be fetched (e.g. offline / file://).
 const DEMO_TOPICS = ['ดาวเด่นสายแข่งขันแห่งเดือน', 'นักเรียนรู้แห่งเดือน', 'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน'];
@@ -955,11 +957,17 @@ async function loadBomEntries(url) {
         imageUrls: driveThumbUrls((cols[4] || '').trim()),
       });
     });
+    // DEBUG — remove once Nibbles issue is resolved
+    console.log('[BOM] raw rows from sheet:', rows.length);
+    rows.forEach((cols, i) => console.log(`  row${i}:`, JSON.stringify(cols)));
+    console.log('[BOM] parsed entries:', entries.map(e => e.name + ' -> ' + e.category + ' | date:' + e.date + ' | within2m:' + withinLastTwoMonths(e.date)));
     if (entries.length > 0) {
       bomEntries = entries;
       return true;
     }
-  } catch (e) { /* fall through to demo */ }
+  } catch (e) {
+    console.error('[BOM] loadBomEntries error:', e);
+  }
   return false;
 }
 
