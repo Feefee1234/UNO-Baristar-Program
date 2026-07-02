@@ -417,15 +417,7 @@ body{line-height:1.5;}
       <div class="bom-page-title">Barista of the Month</div>
       <div class="bom-page-sub">ยกย่องบาริสต้าที่โดดเด่นประจำเดือน</div>
     </div>
-    <div class="bom-section-wrap">
-      <div class="bom-section-label comp">🏆 Competitor of the Month</div>
-    </div>
-    <div id="bom-comp-list"></div>
-    <div class="bom-divider"></div>
-    <div class="bom-section-wrap" style="margin-top:18px;">
-      <div class="bom-section-label learn">📚 Learner of the Month</div>
-    </div>
-    <div id="bom-learn-list"></div>
+    <div id="bom-body"></div>
   </div>
 
   <!-- BOTTOM NAV -->
@@ -496,15 +488,22 @@ const DEMO_STAFF = [
   {store:"MJR",  storeCode:"1002", name:"นางสาวปิยธิดา มั่นทอง",           id:"200017", nickname:"Looktarn",  points:0,   tier:"",        initials:"LO"},
 ];
 
-const FEEFEE_PHOTO = null;
-const BOM_COMPETITORS = [
-  {name:"Feefee",initials:"FF",store:"HQ",month:"June 2026",achievement:"1st Place — Coffee Competition 2026",message:"Feefee คว้าอันดับ 1 ในการแข่งขัน Coffee Competition 2026 ด้วยทักษะและความมุ่งมั่นที่เป็นแบบอย่างให้กับทีม UNO! ทุกคน",photo:FEEFEE_PHOTO},
+// Barista of the Month is driven live by a separate Google Sheet:
+// "Topic" tab = ordered list of section headings (staff can add/remove/rename topics there).
+// "Form Responses 1" tab = one row per submission: Timestamp | หมวดหมู่ | ชื่อพนักงาน/สาขา | รายละเอียดความสำเร็จ | รูปภาพ(Drive link)
+const BOM_SHEET_ID = '1ktta_VxwW2u8qK5CN5fVclOOLQOJNatOBvMnIGx56wA';
+const bomGvizURL = (tab) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+const TOPIC_SHEET_URL = bomGvizURL('Topic');
+const BOM_RESPONSES_URL = bomGvizURL('Form Responses 1');
 
+// Fallback used only if the BOM sheet can't be fetched (e.g. offline / file://).
+const DEMO_TOPICS = ['ดาวเด่นสายแข่งขันแห่งเดือน', 'นักเรียนรู้แห่งเดือน', 'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน'];
+const DEMO_BOM_ENTRIES = [
+  { category:'ดาวเด่นสายแข่งขันแห่งเดือน', name:'Feefee', description:'คว้าอันดับ 1 ในการแข่งขัน Coffee Competition 2026 ด้วยทักษะและความมุ่งมั่นที่เป็นแบบอย่างให้กับทีม UNO! ทุกคน', month:'June 2026', imageUrls:[] },
 ];
-const FEEFEE_LEARN_PHOTO = null;
-const BOM_LEARNERS = [
-  {name:"Feefee",initials:"FF",store:"HQ",month:"June 2026",achievement:"Completed 3 external workshops + 2 internal modules",message:"",photo:FEEFEE_LEARN_PHOTO,glasses:true},
-];
+
+let bomTopics = [];
+let bomEntries = [];
 
 // ═══════════════════════════════
 // STATE
@@ -538,6 +537,12 @@ async function boot() {
   await loadMaster(MASTER_SHEET_URL);
   await loadCriteria(CRITERIA_SHEET_URL);
   renderEarnSection();
+
+  // Load Barista of the Month topics + submissions (separate sheet).
+  const topicsOk = await loadTopics(TOPIC_SHEET_URL);
+  if (!topicsOk) bomTopics = [...DEMO_TOPICS];
+  const entriesOk = await loadBomEntries(BOM_RESPONSES_URL);
+  if (!entriesOk) bomEntries = [...DEMO_BOM_ENTRIES];
 
   // Always show login page — barista must enter ID + Store Code every time
   showLogin();
@@ -732,20 +737,20 @@ function renderEarnSection() {
 // recognition / access / rewards + top-3 highest-scorer bonus.
 // ═══════════════════════════════
 
-// Fallback = the previously hardcoded TIER_BENEFITS content.
+// Fallback = used only if the sheet can't be fetched (e.g. offline / file://).
 const DEMO_CRITERIA = {
-  1: { recognition:['Digital badge','รางวัลการยอมรับรายเดือน'],
-       access:['สปอนเซอร์ตั๋ว Coffee Expo 10%'], rewards:[] },
-  2: { recognition:['Digital badge','รางวัลการยอมรับรายเดือน','Silver pin'],
-       access:['Exclusive Cupping Session','Special Training & Workshop','สปอนเซอร์ตั๋ว Coffee Expo 50%'], rewards:[] },
-  3: { recognition:['Digital badge','รางวัลการยอมรับรายเดือน','UNO Hat 🧢'],
-       access:['Exclusive Cupping Session','Special Training & Workshop','สปอนเซอร์ตั๋ว Coffee Expo 80%'], rewards:[] },
+  1: { recognition:[], access:['สปอนเซอร์ตั๋ว Coffee Expo 10%'], rewards:[] },
+  2: { recognition:['เข็มกลัด UNO!'], access:['สปอนเซอร์ตั๋ว Coffee Expo 30%','Training หรือ Workshop พิเศษ','กิจกรรม Cupping พิเศษ'], rewards:['ของรางวัลพิเศษเฉพาะ tier'] },
+  3: { recognition:['เสื้อคลุมสีพิเศษ'], access:['สปอนเซอร์ตั๋ว Coffee Expo 50%','Training หรือ Workshop พิเศษ','กิจกรรม Cupping พิเศษ'], rewards:['ของรางวัลพิเศษเฉพาะ tier'] },
 };
-// Top-3 highest-scorer bonus text (shown for all tiers). May be overridden by the sheet.
-let topScorerText = '3 อันดับแรกที่มีคะแนนสูงสุดประจำปี จะได้รับสิทธิ์ไปทริป Coffee Farm พิเศษ!';
-let tierCriteria = null; // filled from sheet; null → use DEMO_CRITERIA
+const DEMO_TIER_PTS = { 1:'10–99 คะแนน', 2:'100–199 คะแนน', 3:'200+ คะแนน' };
 
-// Map a tier label found in the Criteria sheet to 1/2/3.
+// Top-3 highest-scorer bonus text (shown for all tiers). Overridden by the sheet if present.
+let topScorerText = '3 อันดับแรกที่มีคะแนนสูงสุดประจำปี จะได้รับสิทธิ์พิเศษไป Coffee Farm Trip!!';
+let tierCriteria = null;   // {1:{recognition,access,rewards}, 2:{...}, 3:{...}} — filled from sheet
+let tierPointsText = null; // {1:'10–99 คะแนน', ...} — filled from sheet (Min/Max Points rows)
+
+// Map a cell's text to a tier number by keyword (works regardless of which column it's in).
 function criteriaTierNum(label) {
   const t = (label || '').toLowerCase();
   if (t.includes('black') || t.includes('ดำ')) return 3;
@@ -753,10 +758,10 @@ function criteriaTierNum(label) {
   if (t.includes('red') || t.includes('แดง')) return 1;
   return 0;
 }
-// Map a category cell to recognition/access/rewards.
+// Map a row-label cell to a category. Tolerant of typos (sheet has "Recogition").
 function criteriaCat(label) {
   const t = (label || '').toLowerCase();
-  if (t.includes('recognition') || t.includes('ยอมรับ') || t.includes('การยกย่อง')) return 'recognition';
+  if (t.includes('recog') || t.includes('ยอมรับ') || t.includes('ยกย่อง')) return 'recognition';
   if (t.includes('access') || t.includes('สิทธิ') || t.includes('เข้าถึง')) return 'access';
   if (t.includes('reward') || t.includes('รางวัล')) return 'rewards';
   return '';
@@ -768,60 +773,162 @@ async function loadCriteria(url) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
-    const rows = csv.trim().split('\n');
-    const header = parseCSVRow(rows[0] || '');
-    const body = rows.slice(1).filter(r => r.trim());
+    const rows = csv.trim().split('\n').filter(r => r.trim());
 
     const built = { 1:{recognition:[],access:[],rewards:[]}, 2:{recognition:[],access:[],rewards:[]}, 3:{recognition:[],access:[],rewards:[]} };
+    const mins = {}, maxes = {};
+    let tierColIdx = null; // { 1: colIndex, 2: colIndex, 3: colIndex } — set once the "Tier / Red / Silver / Black" row is found
+    let catColIdx = -1;    // the label column immediately left of the tier columns
     let sawTop = '';
     let matched = false;
 
-    // Layout A: columns = [Category, Red, Silver, Black] (one benefit per row, per tier).
-    const headTiers = header.map(criteriaTierNum);
-    const tierColIdx = { 1:-1, 2:-1, 3:-1 };
-    headTiers.forEach((tn, i) => { if (tn) tierColIdx[tn] = i; });
-    const hasTierCols = tierColIdx[1] >= 0 || tierColIdx[2] >= 0 || tierColIdx[3] >= 0;
+    rows.forEach(row => {
+      const cols = parseCSVRow(row);
 
-    if (hasTierCols) {
-      body.forEach(r => {
-        const cols = parseCSVRow(r);
-        const cat = criteriaCat(cols[0]);
-        // top-scorer / special row (no category, but has trip/farm/top wording)
-        const joined = cols.join(' ').toLowerCase();
-        if (!cat && /coffee farm|top|3 อันดับ|สูงสุด|ทริป/.test(joined)) {
-          const nonEmpty = cols.filter(c => c && c.trim());
-          if (nonEmpty.length) sawTop = nonEmpty[nonEmpty.length - 1].trim();
-          return;
+      // 1) Look for the tier-header row (contains at least 2 of Red/Silver/Black) — locate its columns dynamically.
+      if (!tierColIdx) {
+        const found = {};
+        cols.forEach((c, i) => { const tn = criteriaTierNum(c); if (tn) found[tn] = i; });
+        if (Object.keys(found).length >= 2) {
+          tierColIdx = found;
+          catColIdx = Math.min(...Object.values(found)) - 1;
+          return; // this row itself is the header, not data
         }
-        if (!cat) return;
+        return; // keep scanning until header is found
+      }
+
+      // 2) Data rows, once we know which column holds the category label and which hold each tier's value.
+      const cat = (cols[catColIdx] || '').trim();
+      const catLower = cat.toLowerCase();
+
+      if (catLower.includes('min point') || catLower.includes('คะแนนขั้นต่ำ')) {
+        [1,2,3].forEach(tn => { const v = parseInt((cols[tierColIdx[tn]] || '').replace(/[^0-9]/g, '')); if (!isNaN(v)) mins[tn] = v; });
+        return;
+      }
+      if (catLower.includes('max point') || catLower.includes('คะแนนสูงสุด') || catLower.includes('คะแนนขั้นสูง')) {
+        [1,2,3].forEach(tn => { const raw = (cols[tierColIdx[tn]] || '').trim(); if (raw) maxes[tn] = raw; });
+        return;
+      }
+
+      const bcat = criteriaCat(cat);
+      if (bcat) {
         [1,2,3].forEach(tn => {
-          const idx = tierColIdx[tn];
-          if (idx >= 0) {
-            const val = (cols[idx] || '').trim();
-            if (val && !/^[-–—x✗]$/i.test(val)) { built[tn][cat].push(val); matched = true; }
-          }
+          const val = (cols[tierColIdx[tn]] || '').trim();
+          if (val && !/^[-–—x✗]$/i.test(val)) { built[tn][bcat].push(val); matched = true; }
         });
-      });
-    } else {
-      // Layout B: columns = [Tier, Category, Benefit]
-      body.forEach(r => {
-        const cols = parseCSVRow(r);
-        const tn = criteriaTierNum(cols[0]);
-        const joined = cols.join(' ').toLowerCase();
-        if (!tn && /coffee farm|top|3 อันดับ|สูงสุด|ทริป/.test(joined)) {
-          const nonEmpty = cols.filter(c => c && c.trim());
-          if (nonEmpty.length) sawTop = nonEmpty[nonEmpty.length - 1].trim();
-          return;
+        return;
+      }
+
+      // 3) Special top-scorer row: no category label, but the row carries a long sentence (merged cell, usually in the label column).
+      if (!cat) {
+        const joined = cols.join(' ').trim();
+        if (joined && /coffee farm|top|3 อันดับ|สูงสุด|ทริป/i.test(joined)) {
+          sawTop = joined;
         }
-        const cat = criteriaCat(cols[1]);
-        const val = (cols[2] || '').trim();
-        if (tn && cat && val) { built[tn][cat].push(val); matched = true; }
-      });
-    }
+      }
+    });
 
     if (matched) {
       tierCriteria = built;
       if (sawTop) topScorerText = sawTop;
+      // Build point-range text per tier from the Min/Max Points rows, e.g. "10–99 คะแนน" or "200+ คะแนน".
+      const pts = {};
+      [1,2,3].forEach(tn => {
+        const min = mins[tn];
+        const max = maxes[tn];
+        if (min === undefined) return;
+        const maxNum = parseInt((max || '').replace(/[^0-9]/g, ''));
+        pts[tn] = (max && !isNaN(maxNum)) ? `${min}–${maxNum} คะแนน` : `${min}+ คะแนน`;
+      });
+      if (Object.keys(pts).length) tierPointsText = pts;
+      return true;
+    }
+  } catch (e) { /* fall through to demo */ }
+  return false;
+}
+
+// ═══════════════════════════════
+// BARISTA OF THE MONTH — Topic + Form Responses loaders
+// ═══════════════════════════════
+
+// Load the ordered topic list from the "Topic" tab (column A, header = "หัวข้อ").
+async function loadTopics(url) {
+  try {
+    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
+    const rows = csv.trim().split('\n').slice(1); // skip header row ("หัวข้อ")
+    const topics = rows
+      .map(r => parseCSVRow(r)[0])
+      .map(t => (t || '').trim())
+      .filter(Boolean);
+    if (topics.length > 0) {
+      bomTopics = topics;
+      return true;
+    }
+  } catch (e) { /* fall through to demo */ }
+  return false;
+}
+
+// Extract a Google Drive file ID from any share-link format.
+function driveFileId(link) {
+  if (!link) return null;
+  const m = link.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{10,})/);
+  return m ? m[1] : null;
+}
+// Google exposes a few different embeddable-image URL formats for the same Drive file,
+// and which one actually works can vary by file/sharing setup. Return them in try-order
+// so the <img> can fall through via onerror if the first one is blocked.
+function driveThumbUrls(link) {
+  const id = driveFileId(link);
+  if (!id) return [];
+  return [
+    `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
+    `https://lh3.googleusercontent.com/d/${id}=w1000`,
+    `https://drive.google.com/uc?export=view&id=${id}`,
+  ];
+}
+
+// Format a Google Forms timestamp ("7/2/2026 15:23:21", M/D/YYYY) as "July 2026".
+function formatMonthYear(timestamp) {
+  const datePart = (timestamp || '').trim().split(' ')[0];
+  const parts = datePart.split('/');
+  if (parts.length < 3) return '';
+  const month = parseInt(parts[0], 10);
+  const year = parseInt(parts[2], 10);
+  if (!month || !year) return '';
+  const d = new Date(year, month - 1, 1);
+  return d.toLocaleString('en-US', { month: 'long' }) + ' ' + year;
+}
+
+// Load submissions from "Form Responses 1":
+// A=Timestamp  B=หมวดหมู่(category)  C=ชื่อพนักงาน/สาขา  D=รายละเอียดความสำเร็จ  E=รูปภาพ(Drive link)
+async function loadBomEntries(url) {
+  try {
+    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
+    const rows = csv.trim().split('\n').slice(1); // skip header row
+    const entries = [];
+    rows.forEach(row => {
+      if (!row.trim()) return;
+      const cols = parseCSVRow(row);
+      const category = (cols[1] || '').trim();
+      const name = (cols[2] || '').trim();
+      const description = (cols[3] || '').trim();
+      if (!category || !name) return;
+      entries.push({
+        category,
+        name,
+        description,
+        month: formatMonthYear(cols[0]),
+        imageUrls: driveThumbUrls((cols[4] || '').trim()),
+      });
+    });
+    if (entries.length > 0) {
+      bomEntries = entries;
       return true;
     }
   } catch (e) { /* fall through to demo */ }
@@ -1158,57 +1265,61 @@ function learnerPortrait(initials, idx) {
   </svg>`;
 }
 
-function renderBom() {
-  document.getElementById('bom-comp-list').innerHTML = BOM_COMPETITORS.map((b, i) => `
-    <div class="bom-card">
-      <div class="bom-portrait comp" style="overflow:hidden;">${b.photo ? `<img src="${b.photo}" style="height:100%;width:auto;object-fit:contain;display:block;">` : competitorPortrait(b.initials, i)}</div>
-      <div class="bom-portrait-badge comp">🏆 ${b.month}</div>
-      <div class="bom-card-body">
-        <div class="bom-card-top">
-          <div><div class="bom-name">${b.name.toUpperCase()}</div><div class="bom-store">${b.store}</div></div>
-          <div class="bom-month-pill comp">ผู้แข่งขัน</div>
-        </div>
-        <div class="bom-achievement"><div class="bom-achievement-label">ความสำเร็จ</div><div class="bom-achievement-val">${b.achievement}</div></div>
-        <div class="bom-message comp">${b.message}</div>
-      </div>
-    </div>`).join('');
+// Cosmetic-only per-topic styling (icon / color class / pill text / placeholder-portrait style).
+// Purely presentational — has no effect on what data shows. Unrecognized/future topics
+// fall back to a generic look so new topics added to the sheet render correctly with no code change.
+const TOPIC_META = {
+  'ดาวเด่นสายแข่งขันแห่งเดือน':        { icon: '🏆', cls: 'comp',  pill: 'ผู้แข่งขัน' },
+  'นักเรียนรู้แห่งเดือน':               { icon: '📚', cls: 'learn', pill: 'Learner' },
+  'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน': { icon: '☕', cls: 'comp',  pill: 'Quality' },
+};
+function topicMeta(topic, idx) {
+  return TOPIC_META[topic] || { icon: '⭐', cls: (idx % 2 === 0 ? 'comp' : 'learn'), pill: topic };
+}
 
-  document.getElementById('bom-learn-list').innerHTML = BOM_LEARNERS.map((b, i) => {
-    const glassesOverlay = b.glasses ? `
-      <svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:38%;left:50%;transform:translateX(-50%);width:78%;pointer-events:none;z-index:2;">
-        <!-- left lens -->
-        <circle cx="95" cy="65" r="48" fill="rgba(20,20,60,0.18)" stroke="#1a1a1a" stroke-width="7"/>
-        <!-- right lens -->
-        <circle cx="245" cy="65" r="48" fill="rgba(20,20,60,0.18)" stroke="#1a1a1a" stroke-width="7"/>
-        <!-- bridge -->
-        <path d="M143 65 Q170 52 197 65" fill="none" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/>
-        <!-- left arm -->
-        <line x1="47" y1="50" x2="5" y2="30" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/>
-        <!-- right arm -->
-        <line x1="293" y1="50" x2="335" y2="30" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round"/>
-        <!-- lightning bolt -->
-        <text x="170" y="24" font-size="22" text-anchor="middle" fill="#f0c030">⚡</text>
-      </svg>` : '';
-    const portrait = b.photo
-      ? `<div style="position:relative;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-           <img src="${b.photo}" style="height:100%;width:auto;object-fit:contain;display:block;">
-           ${glassesOverlay}
-         </div>`
-      : learnerPortrait(b.initials, i);
-    return `
-    <div class="bom-card">
-      <div class="bom-portrait learn" style="overflow:hidden;position:relative;">${portrait}</div>
-      <div class="bom-portrait-badge learn">📚 ${b.month}</div>
-      <div class="bom-card-body">
-        <div class="bom-card-top">
-          <div><div class="bom-name">${b.name.toUpperCase()}</div><div class="bom-store">${b.store}</div></div>
-          <div class="bom-month-pill learn">Learner</div>
-        </div>
-        <div class="bom-achievement"><div class="bom-achievement-label">Learning Achievement</div><div class="bom-achievement-val">${b.achievement}</div></div>
-        ${b.message ? `<div class="bom-message learn">${b.message}</div>` : ''}
-      </div>
+function renderBom() {
+  const host = document.getElementById('bom-body');
+  if (!host) return;
+
+  const topics = bomTopics.length ? bomTopics : DEMO_TOPICS;
+  let html = '';
+
+  topics.forEach((topic, ti) => {
+    const meta = topicMeta(topic, ti);
+    const entries = bomEntries.filter(e => e.category === topic);
+
+    if (ti > 0) html += `<div class="bom-divider"></div>`;
+    html += `<div class="bom-section-wrap" style="${ti > 0 ? 'margin-top:18px;' : ''}">
+      <div class="bom-section-label ${meta.cls}">${meta.icon} ${topic}</div>
     </div>`;
-  }).join('');
+
+    if (!entries.length) {
+      html += `<div style="padding:18px 16px 4px;color:var(--ink3);font-size:13px;">ยังไม่มีข้อมูลสำหรับหัวข้อนี้</div>`;
+      return;
+    }
+
+    entries.forEach((b, i) => {
+      const portraitFallback = meta.cls === 'learn' ? learnerPortrait(b.name.slice(0,2).toUpperCase(), i) : competitorPortrait(b.name.slice(0,2).toUpperCase(), i);
+      const portrait = `<div style="position:relative;width:100%;height:100%;">
+          <div style="position:absolute;inset:0;">${portraitFallback}</div>
+          ${b.imageUrls && b.imageUrls.length ? `<img src="${b.imageUrls[0]}" data-urls='${JSON.stringify(b.imageUrls)}' data-idx="0" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;" onerror="var u=JSON.parse(this.dataset.urls),i=parseInt(this.dataset.idx)+1;if(i<u.length){this.dataset.idx=i;this.src=u[i];}else{this.style.display='none';}">` : ''}
+        </div>`;
+      html += `
+      <div class="bom-card">
+        <div class="bom-portrait ${meta.cls}" style="overflow:hidden;">${portrait}</div>
+        <div class="bom-portrait-badge ${meta.cls}">${meta.icon} ${b.month || ''}</div>
+        <div class="bom-card-body">
+          <div class="bom-card-top">
+            <div><div class="bom-name">${(b.name || '').toUpperCase()}</div></div>
+            <div class="bom-month-pill ${meta.cls}">${meta.pill}</div>
+          </div>
+          ${b.description ? `<div class="bom-message ${meta.cls}">${b.description}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  });
+
+  host.innerHTML = html;
 }
 
 // ═══════════════════════════════
@@ -1293,13 +1404,17 @@ function openTierPanel(tier) {
   const tn = document.getElementById('tbp-tier-name');
   tn.className = 'tbp-tier-name ' + d.tk;
   tn.textContent = d.name;
-  document.getElementById('tbp-tier-pts').textContent = d.pts;
+  const ptsText = (tierPointsText && tierPointsText[tier]) ? tierPointsText[tier] : (DEMO_TIER_PTS[tier] || d.pts);
+  document.getElementById('tbp-tier-pts').textContent = ptsText;
 
   // Benefit content: prefer live Criteria sheet, fall back to demo data.
-  const src = (tierCriteria && tierCriteria[tier]) ? tierCriteria[tier] : DEMO_CRITERIA[tier];
-  const recognition = (src && src.recognition && src.recognition.length) ? src.recognition : d.recognition;
-  const access      = (src && src.access && src.access.length)           ? src.access      : d.access;
-  const rewards     = (src && src.rewards && src.rewards.length)         ? src.rewards     : [];
+  // Use the live sheet's data as-is once loaded — including tiers that legitimately have
+  // zero items in a category (e.g. Red has no Recognition benefit). Only fall back to the
+  // demo set entirely if the Criteria sheet could not be fetched at all.
+  const src = tierCriteria ? tierCriteria[tier] : DEMO_CRITERIA[tier];
+  const recognition = src.recognition;
+  const access      = src.access;
+  const rewards     = src.rewards;
 
   // Body
   const makeItem = (txt) =>
@@ -1322,7 +1437,7 @@ function openTierPanel(tier) {
 
   // Top-3 highest-scorer special bonus (all tiers) — text driven by Criteria sheet if present.
   html += `<div class="tbp-special">
-    <span style="font-size:18px;">✈️</span>
+    <span style="font-size:18px;">☕</span>
     <div class="tbp-special-text">${topScorerText}</div>
   </div>`;
 
