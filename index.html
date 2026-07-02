@@ -915,16 +915,31 @@ function driveThumbUrls(link) {
   ];
 }
 
-// Parse a Google Forms timestamp ("7/2/2026 15:23:21", M/D/YYYY) into a real Date object.
+// Parse a Google Forms timestamp into a real Date object.
+// Handles multiple formats that Google exports depending on endpoint and locale:
+//   "7/2/2026 15:23:21"  (M/D/YYYY HH:MM:SS  — gviz CSV)
+//   "7/2/2026 15:23"     (M/D/YYYY HH:MM      — copy sheet)
+//   "7/2/26 15:23"       (M/D/YY              — some locales)
+//   "2026-07-02 15:23"   (ISO-like)
 function parseFormTimestamp(timestamp) {
-  const datePart = (timestamp || '').trim().split(' ')[0];
-  const parts = datePart.split('/');
-  if (parts.length < 3) return null;
-  const month = parseInt(parts[0], 10);
-  const day = parseInt(parts[1], 10);
-  const year = parseInt(parts[2], 10);
-  if (!month || !day || !year) return null;
-  return new Date(year, month - 1, day);
+  const s = (timestamp || '').trim();
+  if (!s) return null;
+
+  // Try ISO-like: YYYY-MM-DD
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+
+  // Try M/D/YY or M/D/YYYY (with optional time)
+  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (mdy) {
+    let year = parseInt(mdy[3]);
+    if (year < 100) year += 2000; // 2-digit year
+    return new Date(year, parseInt(mdy[1]) - 1, parseInt(mdy[2]));
+  }
+
+  // Fallback: let JS try to parse it
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
 }
 // Format a Google Forms timestamp as "July 2026" for display.
 function formatMonthYear(timestamp) {
@@ -957,10 +972,6 @@ async function loadBomEntries(url) {
         imageUrls: driveThumbUrls((cols[4] || '').trim()),
       });
     });
-    // DEBUG — remove once Nibbles issue is resolved
-    console.log('[BOM] raw rows from sheet:', rows.length);
-    rows.forEach((cols, i) => console.log(`  row${i}:`, JSON.stringify(cols)));
-    console.log('[BOM] parsed entries:', entries.map(e => e.name + ' -> ' + e.category + ' | date:' + e.date + ' | within2m:' + withinLastTwoMonths(e.date)));
     if (entries.length > 0) {
       bomEntries = entries;
       return true;
