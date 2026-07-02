@@ -494,11 +494,10 @@ const DEMO_STAFF = [
 const BOM_SHEET_ID = '1ktta_VxwW2u8qK5CN5fVclOOLQOJNatOBvMnIGx56wA';
 const bomGvizURL = (tab) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
 const bomExportURL = (gid) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/export?format=csv&gid=${gid}`;
-// Topic tab uses gviz (plain sheet, works fine).
-// Responses uses export endpoint + plain "Copy of Response" tab (gid=139081859) to avoid
-// both the Tables-feature column-blank bug and the gviz CORS block on that tab.
+// Topic: plain sheet, gviz works fine.
+// Form Responses 1 (gid=444632123): use export endpoint to bypass Tables-feature column-blank bug.
 const TOPIC_SHEET_URL = bomGvizURL('Topic');
-const BOM_RESPONSES_URL = bomExportURL('139081859');
+const BOM_RESPONSES_URL = bomExportURL('444632123');
 
 // Fallback used only if the BOM sheet can't be fetched (e.g. offline / file://).
 const DEMO_TOPICS = ['ดาวเด่นสายแข่งขันแห่งเดือน', 'นักเรียนรู้แห่งเดือน', 'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน'];
