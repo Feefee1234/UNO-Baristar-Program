@@ -499,7 +499,7 @@ const BOM_RESPONSES_URL = bomGvizURL('Form Responses 1');
 // Fallback used only if the BOM sheet can't be fetched (e.g. offline / file://).
 const DEMO_TOPICS = ['ดาวเด่นสายแข่งขันแห่งเดือน', 'นักเรียนรู้แห่งเดือน', 'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน'];
 const DEMO_BOM_ENTRIES = [
-  { category:'ดาวเด่นสายแข่งขันแห่งเดือน', name:'Feefee', description:'คว้าอันดับ 1 ในการแข่งขัน Coffee Competition 2026 ด้วยทักษะและความมุ่งมั่นที่เป็นแบบอย่างให้กับทีม UNO! ทุกคน', month:'June 2026', imageUrls:[] },
+  { category:'ดาวเด่นสายแข่งขันแห่งเดือน', name:'Feefee', description:'คว้าอันดับ 1 ในการแข่งขัน Coffee Competition 2026 ด้วยทักษะและความมุ่งมั่นที่เป็นแบบอย่างให้กับทีม UNO! ทุกคน', date:new Date(), month:'June 2026', imageUrls:[] },
 ];
 
 let bomTopics = [];
@@ -890,16 +890,22 @@ function driveThumbUrls(link) {
   ];
 }
 
-// Format a Google Forms timestamp ("7/2/2026 15:23:21", M/D/YYYY) as "July 2026".
-function formatMonthYear(timestamp) {
+// Parse a Google Forms timestamp ("7/2/2026 15:23:21", M/D/YYYY) into a real Date object.
+function parseFormTimestamp(timestamp) {
   const datePart = (timestamp || '').trim().split(' ')[0];
   const parts = datePart.split('/');
-  if (parts.length < 3) return '';
+  if (parts.length < 3) return null;
   const month = parseInt(parts[0], 10);
+  const day = parseInt(parts[1], 10);
   const year = parseInt(parts[2], 10);
-  if (!month || !year) return '';
-  const d = new Date(year, month - 1, 1);
-  return d.toLocaleString('en-US', { month: 'long' }) + ' ' + year;
+  if (!month || !day || !year) return null;
+  return new Date(year, month - 1, day);
+}
+// Format a Google Forms timestamp as "July 2026" for display.
+function formatMonthYear(timestamp) {
+  const d = parseFormTimestamp(timestamp);
+  if (!d) return '';
+  return d.toLocaleString('en-US', { month: 'long' }) + ' ' + d.getFullYear();
 }
 
 // Load submissions from "Form Responses 1":
@@ -923,6 +929,7 @@ async function loadBomEntries(url) {
         category,
         name,
         description,
+        date: parseFormTimestamp(cols[0]),
         month: formatMonthYear(cols[0]),
         imageUrls: driveThumbUrls((cols[4] || '').trim()),
       });
@@ -1277,6 +1284,15 @@ function topicMeta(topic, idx) {
   return TOPIC_META[topic] || { icon: '⭐', cls: (idx % 2 === 0 ? 'comp' : 'learn'), pill: topic };
 }
 
+// Keep only entries from the current calendar month or the previous one (relative to today),
+// newest first. An entry with no parseable date is excluded rather than guessed at.
+function withinLastTwoMonths(date) {
+  if (!date) return false;
+  const now = new Date();
+  const monthsDiff = (now.getFullYear() * 12 + now.getMonth()) - (date.getFullYear() * 12 + date.getMonth());
+  return monthsDiff >= 0 && monthsDiff <= 1;
+}
+
 function renderBom() {
   const host = document.getElementById('bom-body');
   if (!host) return;
@@ -1286,7 +1302,9 @@ function renderBom() {
 
   topics.forEach((topic, ti) => {
     const meta = topicMeta(topic, ti);
-    const entries = bomEntries.filter(e => e.category === topic);
+    const entries = bomEntries
+      .filter(e => e.category === topic && withinLastTwoMonths(e.date))
+      .sort((a, b) => (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0));
 
     if (ti > 0) html += `<div class="bom-divider"></div>`;
     html += `<div class="bom-section-wrap" style="${ti > 0 ? 'margin-top:18px;' : ''}">
@@ -1299,10 +1317,14 @@ function renderBom() {
     }
 
     entries.forEach((b, i) => {
+      const hasImages = b.imageUrls && b.imageUrls.length;
       const portraitFallback = meta.cls === 'learn' ? learnerPortrait(b.name.slice(0,2).toUpperCase(), i) : competitorPortrait(b.name.slice(0,2).toUpperCase(), i);
-      const portrait = `<div style="position:relative;width:100%;height:100%;">
-          <div style="position:absolute;inset:0;">${portraitFallback}</div>
-          ${b.imageUrls && b.imageUrls.length ? `<img src="${b.imageUrls[0]}" data-urls='${JSON.stringify(b.imageUrls)}' data-idx="0" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;" onerror="var u=JSON.parse(this.dataset.urls),i=parseInt(this.dataset.idx)+1;if(i<u.length){this.dataset.idx=i;this.src=u[i];}else{this.style.display='none';}">` : ''}
+      // Uploaded photos are square (per staff instructions) — use object-fit:contain so the full
+      // square shows with blank letterbox space on the sides, rather than cropping to fill.
+      // The illustrated placeholder stays hidden behind it and only appears if every image URL fails.
+      const portrait = `<div style="position:relative;width:100%;height:100%;background:var(--surface2);">
+          <div style="position:absolute;inset:0;${hasImages ? 'display:none;' : ''}">${portraitFallback}</div>
+          ${hasImages ? `<img src="${b.imageUrls[0]}" data-urls='${JSON.stringify(b.imageUrls)}' data-idx="0" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface2);display:block;" onerror="var u=JSON.parse(this.dataset.urls),i=parseInt(this.dataset.idx)+1;if(i<u.length){this.dataset.idx=i;this.src=u[i];}else{this.style.display='none';this.previousElementSibling.style.display='block';}">` : ''}
         </div>`;
       html += `
       <div class="bom-card">
