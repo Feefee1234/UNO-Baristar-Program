@@ -493,8 +493,10 @@ const DEMO_STAFF = [
 // "Form Responses 1" tab = one row per submission: Timestamp | หมวดหมู่ | ชื่อพนักงาน/สาขา | รายละเอียดความสำเร็จ | รูปภาพ(Drive link)
 const BOM_SHEET_ID = '1ktta_VxwW2u8qK5CN5fVclOOLQOJNatOBvMnIGx56wA';
 const bomGvizURL = (tab) => `https://docs.google.com/spreadsheets/d/${BOM_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+// "Copy of Response" (gid=139081859) is a plain sheet — no Tables feature — so gviz exports it correctly.
+// "Form Responses 1" has Google's Tables feature which causes column C to export as blank.
 const TOPIC_SHEET_URL = bomGvizURL('Topic');
-const BOM_RESPONSES_URL = bomGvizURL('Form Responses 1');
+const BOM_RESPONSES_URL = bomGvizURL('Copy of Response');
 
 // Fallback used only if the BOM sheet can't be fetched (e.g. offline / file://).
 const DEMO_TOPICS = ['ดาวเด่นสายแข่งขันแห่งเดือน', 'นักเรียนรู้แห่งเดือน', 'สาขากาแฟคุณภาพยอดเยี่ยมประจำเดือน'];
