@@ -563,6 +563,34 @@ function parseCSVRow(row) {
   return result;
 }
 
+// Full-CSV parser (whole document, not line-by-line): correctly handles cells that contain
+// embedded line breaks (e.g. a multi-line description), commas, and escaped "" quotes.
+// Splitting naively on '\n' before parsing quotes — as parseCSVRow-per-line does — corrupts
+// any row whose cell has a real line break in it, so every sheet loader uses this instead.
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = '', inQuotes = false;
+  const s = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (s[i + 1] === '"') { cell += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        cell += ch;
+      }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { row.push(cell.trim()); cell = ''; }
+      else if (ch === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+      else { cell += ch; }
+    }
+  }
+  if (cell.length > 0 || row.length > 0) { row.push(cell.trim()); rows.push(row); }
+  return rows.filter(r => r.some(c => c !== ''));
+}
+
 async function loadFromSheet(url, showFeedback = true) {
   try {
     const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()); // cache-bust
@@ -570,11 +598,9 @@ async function loadFromSheet(url, showFeedback = true) {
     const csv = await res.text();
     // Guard: if Google returned an HTML page instead of CSV (e.g. auth wall), treat as failure
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV — check sheet sharing permissions');
-    const rows = csv.trim().split('\n').slice(1); // skip header row
+    const rows = parseCSV(csv).slice(1); // skip header row
     const loaded = rows
-      .filter(r => r.trim())
-      .map((row, i) => {
-        const cols = parseCSVRow(row);
+      .map((cols, i) => {
         // Sheet "Staff Data" columns:
         // A:Store  B:Store Code  C:Name  D:ID  E:Nickname  F:Position  G:Start Date  H:Resigned  I:Total Points  J:Tier
         const name = (cols[2] || '').trim();
@@ -678,11 +704,9 @@ async function loadMaster(url) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
-    const rows = csv.trim().split('\n').slice(1); // skip header row
+    const rows = parseCSV(csv).slice(1); // skip header row
     const loaded = [];
-    rows.forEach(row => {
-      if (!row.trim()) return;
-      const cols = parseCSVRow(row);
+    rows.forEach(cols => {
       // A=group(หัวข้อ)  C=activity(กิจกรรม)  D=points(คะแนน)
       const group = (cols[0] || '').trim();
       const activity = (cols[2] || '').trim();
@@ -773,7 +797,7 @@ async function loadCriteria(url) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
-    const rows = csv.trim().split('\n').filter(r => r.trim());
+    const rows = parseCSV(csv);
 
     const built = { 1:{recognition:[],access:[],rewards:[]}, 2:{recognition:[],access:[],rewards:[]}, 3:{recognition:[],access:[],rewards:[]} };
     const mins = {}, maxes = {};
@@ -782,9 +806,7 @@ async function loadCriteria(url) {
     let sawTop = '';
     let matched = false;
 
-    rows.forEach(row => {
-      const cols = parseCSVRow(row);
-
+    rows.forEach(cols => {
       // 1) Look for the tier-header row (contains at least 2 of Red/Silver/Black) — locate its columns dynamically.
       if (!tierColIdx) {
         const found = {};
@@ -858,10 +880,9 @@ async function loadTopics(url) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
-    const rows = csv.trim().split('\n').slice(1); // skip header row ("หัวข้อ")
+    const rows = parseCSV(csv).slice(1); // skip header row ("หัวข้อ")
     const topics = rows
-      .map(r => parseCSVRow(r)[0])
-      .map(t => (t || '').trim())
+      .map(cols => (cols[0] || '').trim())
       .filter(Boolean);
     if (topics.length > 0) {
       bomTopics = topics;
@@ -916,11 +937,9 @@ async function loadBomEntries(url) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csv = await res.text();
     if (csv.trim().startsWith('<')) throw new Error('Got HTML instead of CSV');
-    const rows = csv.trim().split('\n').slice(1); // skip header row
+    const rows = parseCSV(csv).slice(1); // skip header row
     const entries = [];
-    rows.forEach(row => {
-      if (!row.trim()) return;
-      const cols = parseCSVRow(row);
+    rows.forEach(cols => {
       const category = (cols[1] || '').trim();
       const name = (cols[2] || '').trim();
       const description = (cols[3] || '').trim();
