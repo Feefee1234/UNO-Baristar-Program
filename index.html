@@ -1361,14 +1361,15 @@ function renderBom() {
       // Uploaded photos are square (per staff instructions) — use object-fit:contain so the full
       // square shows with blank letterbox space on the sides, rather than cropping to fill.
       // The illustrated placeholder stays hidden behind it and only appears if every image URL fails.
+      // Date badge is placed INSIDE the portrait div so it overlays the image correctly.
       const portrait = `<div style="position:relative;width:100%;height:100%;background:var(--surface2);">
           <div style="position:absolute;inset:0;${hasImages ? 'display:none;' : ''}">${portraitFallback}</div>
           ${hasImages ? `<img src="${b.imageUrls[0]}" data-urls='${JSON.stringify(b.imageUrls)}' data-idx="0" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--surface2);display:block;" onerror="var u=JSON.parse(this.dataset.urls),i=parseInt(this.dataset.idx)+1;if(i<u.length){this.dataset.idx=i;this.src=u[i];}else{this.style.display='none';this.previousElementSibling.style.display='block';}">` : ''}
+          <div class="bom-portrait-badge ${meta.cls}" style="position:absolute;top:12px;right:12px;">${meta.icon} ${b.month || ''}</div>
         </div>`;
       html += `
       <div class="bom-card">
         <div class="bom-portrait ${meta.cls}" style="overflow:hidden;">${portrait}</div>
-        <div class="bom-portrait-badge ${meta.cls}">${meta.icon} ${b.month || ''}</div>
         <div class="bom-card-body">
           <div class="bom-card-top">
             <div><div class="bom-name">${(b.name || '').toUpperCase()}</div></div>
