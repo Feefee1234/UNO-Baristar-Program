@@ -640,7 +640,7 @@ async function loadFromSheet(url, showFeedback = true) {
 // MASTER SHEET (earn / point-collection activities)
 // Sheet "Master":
 //   Main block:  A=หัวข้อ(group)  C=รายละเอียด(activity)  D=คะแนน(points)
-//   Bonus block: F=หัวข้อ(group)  G=รายละเอียด(activity)  H=หมวดโบนัส(topic)  I=คะแนน(points)
+//   Bonus block (คะแนนพิเศษ): F=หัวข้อ(group)  G=รายละเอียด(activity)  H=คะแนน(points)
 // Bonus rows sort to the bottom of each group.
 // ═══════════════════════════════
 
@@ -721,15 +721,14 @@ async function loadMaster(url) {
         loaded.push({ group, activity, points, bonus: isBonusActivity(activity) });
       }
 
-      // Bonus block: F=group(หัวข้อ)  G=activity(รายละเอียด)  H=topic(หมวดโบนัส)  I=points(คะแนน)
+      // Bonus block (คะแนนพิเศษ): F=หัวข้อ/section(group)  G=รายละเอียด(activity)  H=คะแนน(points)
       // Shown as bonus rows at the bottom of their group.
       const bGroup = (cols[5] || '').trim();
       const bActivity = (cols[6] || '').trim();
-      const bTopic = (cols[7] || '').trim();
-      const bPtsRaw = (cols[8] || '').replace(/[^0-9.-]/g, '');
+      const bPtsRaw = (cols[7] || '').replace(/[^0-9.-]/g, '');
       const bPoints = parseInt(bPtsRaw) || 0;
       if (bGroup && bActivity) {
-        loaded.push({ group: bGroup, activity: bActivity, sub: bTopic || undefined, points: bPoints, bonus: true });
+        loaded.push({ group: bGroup, activity: bActivity, points: bPoints, bonus: true });
       }
     });
     if (loaded.length > 0) {
