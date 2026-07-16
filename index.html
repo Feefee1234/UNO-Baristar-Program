@@ -638,10 +638,8 @@ async function loadFromSheet(url, showFeedback = true) {
 
 // ═══════════════════════════════
 // MASTER SHEET (earn / point-collection activities)
-// Sheet "Master":
-//   Main block:  A=หัวข้อ(group)  C=รายละเอียด(activity)  D=คะแนน(points)
-//   Bonus block (คะแนนพิเศษ): F=หัวข้อ(group)  G=รายละเอียด(activity)  H=คะแนน(points)
-// Bonus rows sort to the bottom of each group.
+// Sheet "Master": A=หัวข้อ(group)  C=รายละเอียด(activity)  D=คะแนน(points)
+// Bonus/special rows sort to the bottom of each group.
 // ═══════════════════════════════
 
 // Emoji + English label per group heading (fallback to a generic look if unknown).
@@ -712,23 +710,13 @@ async function loadMaster(url) {
     const rows = parseCSV(csv).slice(1); // skip header row
     const loaded = [];
     rows.forEach(cols => {
-      // Main block:  A=group(หัวข้อ)  C=activity(รายละเอียด)  D=points(คะแนน)
+      // A=group(หัวข้อ)  C=activity(รายละเอียด)  D=points(คะแนน)
       const group = (cols[0] || '').trim();
       const activity = (cols[2] || '').trim();
       const ptsRaw = (cols[3] || '').replace(/[^0-9.-]/g, '');
       const points = parseInt(ptsRaw) || 0;
       if (group && activity) {
         loaded.push({ group, activity, points, bonus: isBonusActivity(activity) });
-      }
-
-      // Bonus block (คะแนนพิเศษ): F=หัวข้อ/section(group)  G=รายละเอียด(activity)  H=คะแนน(points)
-      // Shown as bonus rows at the bottom of their group.
-      const bGroup = (cols[5] || '').trim();
-      const bActivity = (cols[6] || '').trim();
-      const bPtsRaw = (cols[7] || '').replace(/[^0-9.-]/g, '');
-      const bPoints = parseInt(bPtsRaw) || 0;
-      if (bGroup && bActivity) {
-        loaded.push({ group: bGroup, activity: bActivity, points: bPoints, bonus: true });
       }
     });
     if (loaded.length > 0) {
