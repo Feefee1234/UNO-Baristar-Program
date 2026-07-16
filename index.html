@@ -321,7 +321,7 @@ body{line-height:1.5;}
         <strong>4.</strong> วางด้านล่างแล้วกด เชื่อมต่อ
       </p>
     </div>
-    <div class="setup-sub" style="margin-bottom:8px;font-size:12px;">Sheet columns must be: A ID · B Store · C Name · E Nickname · F Position · G Start Date · H Resigned · K รหัสสาขา (password) · L Total points · M Tier</div>
+    <div class="setup-sub" style="margin-bottom:8px;font-size:12px;">Sheet columns must be: A รหัสพนักงาน (ID) · B Store · C Name · E Nickname · F แผนก · G ตำแหน่ง · H Resigned · K รหัสสาขา (password) · L Total points · M Tier</div>
     <label class="setup-label">URL ของ Google Sheet CSV ที่เผยแพร่แล้ว</label>
     <input class="setup-input" id="setup-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
     <button class="setup-btn" id="setup-connect-btn" onclick="connectAndSave()">เชื่อมต่อและบันทึก</button>
@@ -605,7 +605,7 @@ async function loadFromSheet(url, showFeedback = true) {
     const loaded = rows
       .map((cols, i) => {
         // Sheet "Staff Data" columns:
-        // A:ID  B:Store  C:Name  D:(unused)  E:Nickname  F:แผนก (department)  G:ตำแหน่ง (position)  H:Resigned
+        // A:รหัสพนักงาน (ID)  B:Store  C:Name  D:(unused)  E:Nickname  F:แผนก (department)  G:ตำแหน่ง (position)  H:Resigned
         // K:รหัสสาขา (password)  L:Total points  M:Tier
         const name = (cols[2] || '').trim();
         const nickname = (cols[4] || '').trim();
@@ -614,7 +614,7 @@ async function loadFromSheet(url, showFeedback = true) {
           store:     (cols[1] || '').trim(),
           storeCode: (cols[10] || '').trim(),   // K = รหัสสาขา, used as password
           name:      name || 'Staff ' + (i + 1),
-          id:        (cols[0] || '').trim(),     // A = staff ID (login)
+          id:        (cols[0] || '').trim(),     // A = รหัสพนักงาน (login)
           nickname:  nickname || name,
           department:(cols[5] || '').trim(),     // F = แผนก
           position:  (cols[6] || '').trim(),      // G = ตำแหน่ง
@@ -1111,13 +1111,13 @@ function showApp() {
 // ═══════════════════════════════
 // TIER LOGIC
 // ═══════════════════════════════
-// Tier now comes directly from the sheet's "Tier" column (J), not computed from points.
+// Tier now comes directly from the sheet's "Tier" column (M), not computed from points.
 function tierFromLabel(label) {
   const l = (label || '').trim().toLowerCase();
   if (l === 'black') return 3;
   if (l === 'silver') return 2;
   if (l === 'red') return 1;
-  return 0; // covers "No Tier", "None", "#N/A", empty, or unrecognized → ยังไม่มีระดับ
+  return 0; // covers blank/"No Tier"/"None"/"#N/A"/unrecognized → ยังไม่มีระดับ เข้าร่วมกิจกรรมเพื่อสะสมแต้ม
 }
 function getTier(p) { return p >= 200 ? 3 : p >= 100 ? 2 : p >= 10 ? 1 : 0; } // kept for demo-data fallback
 function tierKey(t) { return ['t0','t-red','t-silver','t-black'][t]; }
