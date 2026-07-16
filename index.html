@@ -605,7 +605,7 @@ async function loadFromSheet(url, showFeedback = true) {
     const loaded = rows
       .map((cols, i) => {
         // Sheet "Staff Data" columns:
-        // A:ID  B:Store  C:Name  D:(unused)  E:Nickname  F:Position  G:Start Date  H:Resigned
+        // A:ID  B:Store  C:Name  D:(unused)  E:Nickname  F:แผนก (department)  G:ตำแหน่ง (position)  H:Resigned
         // K:รหัสสาขา (password)  L:Total points  M:Tier
         const name = (cols[2] || '').trim();
         const nickname = (cols[4] || '').trim();
@@ -616,7 +616,8 @@ async function loadFromSheet(url, showFeedback = true) {
           name:      name || 'Staff ' + (i + 1),
           id:        (cols[0] || '').trim(),     // A = staff ID (login)
           nickname:  nickname || name,
-          position:  (cols[5] || '').trim(),
+          department:(cols[5] || '').trim(),     // F = แผนก
+          position:  (cols[6] || '').trim(),      // G = ตำแหน่ง
           resigned:  (cols[7] || '').trim(),
           points:    parseInt((cols[11] || '0').replace(/,/g, '')) || 0,   // L = Total points
           tier:      (rawTier && rawTier !== '#N/A') ? rawTier : 'None',    // M = Tier
@@ -1178,7 +1179,7 @@ function renderMyCard() {
   const t = tierFromLabel(me.tier), tk = tierKey(t);
 
   document.getElementById('hero-name').textContent = (me.nickname || me.name).toUpperCase();
-  document.getElementById('hero-branch').textContent = me.store + ' · บาริสต้า';
+  document.getElementById('hero-branch').textContent = [me.department, me.position].filter(Boolean).join(' · ');
   document.getElementById('hero-pts').textContent = me.points;
 
   const b = document.getElementById('hero-badge');
