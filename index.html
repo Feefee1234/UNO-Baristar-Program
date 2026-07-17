@@ -223,17 +223,13 @@ body{line-height:1.5;}
 .tier-benefit-sheet{background:var(--surface);border-radius:var(--r-2xl) var(--r-2xl) 0 0;width:100%;max-width:var(--maxw);max-height:88vh;overflow-y:auto;padding:0 0 env(safe-area-inset-bottom);box-shadow:var(--sh-lg);border:2px solid var(--ink);border-bottom:none;animation:sheetUp .38s var(--e);}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 /* ===== Post-login POSTER overlay ===== */
-#poster-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:26px 20px;background:rgba(31,26,22,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+#poster-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:0;background:rgba(31,26,22,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 #poster-overlay.show{display:flex;animation:posterFade .28s ease both;}
 @keyframes posterFade{from{opacity:0}to{opacity:1}}
-.poster-board{position:relative;max-width:440px;width:100%;perspective:1400px;}
+.poster-board{position:relative;width:75vw;max-width:520px;max-height:75vh;perspective:1400px;}
 .poster-frame{position:relative;transform-origin:top left;will-change:transform,opacity;animation:posterPop .5s cubic-bezier(.2,.9,.25,1.15) both;}
 @keyframes posterPop{0%{opacity:0;transform:translateY(-16px) scale(.9) rotate(-1.5deg)}60%{transform:translateY(0) scale(1.02) rotate(.4deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
-/* two pushpins at the top, like a poster on a board */
-.poster-frame::before,.poster-frame::after{content:"";position:absolute;top:-9px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7a5c,#bb2a04 70%);box-shadow:0 3px 6px rgba(0,0,0,.35),inset -1px -2px 3px rgba(0,0,0,.3);z-index:3;}
-.poster-frame::before{left:16%;}
-.poster-frame::after{right:16%;background:radial-gradient(circle at 35% 30%,#7fd0ff,#2b7dbe 70%);}
-.poster-img{display:block;width:100%;height:auto;border-radius:8px;border:3px solid var(--ink);box-shadow:8px 10px 0 rgba(31,26,22,.28),0 18px 40px rgba(0,0,0,.35);background:#fff;}
+.poster-img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;border-radius:8px;border:3px solid var(--ink);box-shadow:8px 10px 0 rgba(31,26,22,.28),0 18px 40px rgba(0,0,0,.35);background:#fff;}
 .poster-loading{padding:40px 24px;color:#fff;font-weight:800;text-align:center;letter-spacing:.5px;}
 .poster-close{position:absolute;top:-14px;right:-14px;z-index:4;width:38px;height:38px;border-radius:50%;border:3px solid var(--ink);background:var(--paper,#f5f0e8);color:var(--ink);font-size:20px;font-weight:900;line-height:1;cursor:pointer;box-shadow:3px 3px 0 var(--ink);display:flex;align-items:center;justify-content:center;transition:transform .12s;}
 .poster-close:active{transform:scale(.9);}
@@ -563,6 +559,7 @@ let posterShownThisSession = false;
 // BOOT
 // ═══════════════════════════════
 async function boot() {
+  console.log('%c[BUILD] Barista Stars — poster build v2 (' + new Date().toISOString().slice(0,10) + ')', 'color:#bb2a04;font-weight:bold');
   initWatermark();
   // Use an admin-saved override URL if one was set, otherwise the live Staff Data sheet.
   const savedUrl = localStorage.getItem(SHEET_KEY);
@@ -1170,9 +1167,10 @@ function toDirectImageUrl(url) {
 }
 
 async function showPoster() {
+  console.log('[poster] showPoster() called — POSTER_SHEET_URL =', POSTER_SHEET_URL);
   if (posterShownThisSession) return;
   const url = await fetchLatestPosterUrl();
-  if (!url) return; // nothing to show
+  if (!url) { console.warn('[poster] no usable URL → not showing'); return; }
   posterShownThisSession = true;
   const overlay = document.getElementById('poster-overlay');
   const img = document.getElementById('poster-img');
@@ -1183,7 +1181,11 @@ async function showPoster() {
   loading.style.display = 'block';
   img.style.display = 'none';
   img.onload = () => { loading.style.display = 'none'; img.style.display = 'block'; };
-  img.onerror = () => { console.warn('[poster] image failed to load:', url); closePoster(); };
+  img.onerror = () => {
+    console.warn('[poster] image failed to load:', url);
+    // Don't auto-close — show the broken link on screen so it can be diagnosed.
+    loading.innerHTML = 'โหลดรูปไม่ได้ ✕<br><span style="font-size:11px;font-weight:600;word-break:break-all;opacity:.85;display:block;margin-top:8px;">' + url + '</span>';
+  };
   img.src = url;
   overlay.classList.add('show');
 }
